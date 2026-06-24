@@ -1,0 +1,42 @@
+// ignore_for_file: avoid_print
+import 'dart:io';
+import 'generate.dart' as gen_model;
+import 'generate_usecase.dart' as gen_usecase;
+import 'generate_getx.dart' as gen_getx;
+
+void main(List<String> args) {
+  while (true) {
+    print('');
+    print('=====================================');
+    print('🚀 FLUTTER GENERATOR PRO 🚀');
+    print('=====================================');
+    print('Silakan pilih alat yang ingin dijalankan:');
+    print('1. JSON to Entity & Model Generator');
+    print('2. Usecase Generator');
+    print('3. GetX Presentation Generator');
+    print('4. Keluar');
+    print('=====================================');
+    stdout.write('Masukkan pilihan Anda (1/2/3/4): ');
+
+    final input = stdin.readLineSync()?.trim();
+
+    if (input == '4') {
+      print('👋 Terima kasih telah menggunakan Flutter Generator Pro!');
+      break;
+    } else if (input == '1') {
+      print('\n--- JSON to Entity & Model Generator ---');
+      gen_model.main(args);
+      break;
+    } else if (input == '2') {
+      print('\n--- Usecase Generator ---');
+      gen_usecase.main(args);
+      break;
+    } else if (input == '3') {
+      print('\n--- GetX Presentation Generator ---');
+      gen_getx.main();
+      break;
+    } else {
+      print('❌ Pilihan tidak valid, silakan masukkan angka 1, 2, 3, atau 4.');
+    }
+  }
+}

@@ -1,0 +1,29 @@
+name: flutter_generator
+description: "Flutter Generator Pro - Custom CLI tools untuk mempercepat development Flutter dengan Clean Architecture & GetX."
+version: 1.0.0
+homepage:
+
+environment:
+  sdk: ^3.10.4
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.8.1
+  analyzer: ^7.7.1
+
+executables:
+  flutter_generator: flutter_generator
+  gen_model: generate
+  gen_usecase: generate_usecase
+  gen_getx: generate_getx
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.9
+  freezed: ^2.4.7
+  json_serializable: ^6.9.5

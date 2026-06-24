@@ -1,0 +1,13 @@
+{
+  "email": "test@test.com",
+  "password": "password",
+  "device_id": "device123",
+  "fcm_token": "fcmtoken123",
+  "is_active": true,
+  "roles": ["admin", "user"],
+  "profile_info": {
+    "first_name": "John",
+    "last_name": "Doe",
+    "age": 30
+  }
+}

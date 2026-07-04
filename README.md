@@ -15,6 +15,7 @@
 - [Generator 1: JSON to Entity & Model](#-1-json-to-entity--model-generator)
 - [Generator 2: Usecase Generator](#-2-usecase-generator)
 - [Generator 3: GetX Presentation Generator](#-3-getx-presentation-generator)
+- [Generator 4: Initial Setup Project](#-4-initial-setup-project-generator)
 - [Struktur Project](#-struktur-project)
 - [Catatan Penting](#-catatan-penting)
 
@@ -58,9 +59,10 @@ Silakan pilih alat yang ingin dijalankan:
 1. JSON to Entity & Model Generator
 2. Usecase Generator
 3. GetX Presentation Generator
-4. Keluar
+4. Initial Setup Project Generator
+5. Keluar
 =====================================
-Masukkan pilihan Anda (1/2/3/4):
+Masukkan pilihan Anda (1/2/3/4/5):
 ```
 
 Pilih angka sesuai generator yang ingin dijalankan. Anda juga dapat menjalankan masing-masing generator secara langsung:
@@ -69,6 +71,7 @@ Pilih angka sesuai generator yang ingin dijalankan. Anda juga dapat menjalankan 
 dart run flutter_generator:gen_model      # JSON to Entity & Model
 dart run flutter_generator:gen_usecase    # Usecase Generator
 dart run flutter_generator:gen_getx       # GetX Presentation Generator
+dart run flutter_generator:generate_init  # Initial Setup Project Generator
 ```
 
 ---
@@ -329,6 +332,86 @@ Jika Anda memilih `n`, tidak ada modifikasi route yang dilakukan.
 
 ---
 
+## 🌟 4. Initial Setup Project Generator
+
+Membuat struktur folder dasar (Clean Architecture) dan *file boilerplate* penting untuk memulai project Flutter dengan GetX.
+
+### Cara Pakai
+
+```
+=== Flutter Initial Setup Project Generator ===
+🚀 Memulai inisialisasi struktur project...
+✅ Created directory: lib/core/const
+...
+🎉 Inisialisasi struktur project selesai!
+```
+
+### Hasil Output
+
+Generator akan membuat struktur folder berikut dan *template* file standar secara otomatis:
+
+```text
+lib/
+├── core/
+│   ├── const/
+│   │   └── app_constants.dart
+│   ├── error/
+│   │   ├── exceptions.dart
+│   │   └── failures.dart
+│   ├── mixin/
+│   │   ├── lazy_tab_navigation_mixin.dart
+│   │   └── tab_loadable_mixin.dart
+│   ├── module/
+│   ├── network/
+│   │   └── api_client.dart
+│   └── shared/
+├── data/
+│   ├── model/
+│   ├── repository_impl/
+│   └── source/
+├── domain/
+│   ├── entity/
+│   ├── repository/
+│   └── usecase/
+├── presentation/
+│   ├── dashboard/
+│   │   ├── bindings/
+│   │   │   └── dashboard_binding.dart
+│   │   ├── controllers/
+│   │   │   └── dashboard_controller.dart
+│   │   └── views/
+│   │       └── dashboard_view.dart
+│   └── main/
+│       └── splash_screen/
+│           ├── bindings/
+│           │   └── splash_screen_binding.dart
+│           ├── controllers/
+│           │   └── splash_screen_controller.dart
+│           └── views/
+│               └── splash_screen_view.dart
+├── service/
+│   ├── auth/
+│   │   └── auth_service.dart
+│   ├── dependency/
+│   │   └── dependency_injection.dart
+│   ├── route/
+│   │   ├── app_route.dart
+│   │   └── route_name.dart
+│   └── theme/
+│       ├── theme.dart
+│       └── theme_manager.dart
+└── main.dart
+```
+
+### Fitur Unggulan
+- ✅ **Struktur Bersih & Modular** — Menyiapkan hierarki untuk Data, Domain, Presentation, dan Core.
+- ✅ **Setup Lengkap `main.dart`** — Terintegrasi dengan `GetMaterialApp`, `ScreenUtilInit`, tema (*dark/light*), *routing*, pengaturan zona waktu, dan *scale text* yang dinamis.
+- ✅ **Network via Dio** — `api_client.dart` menggunakan package `Dio` untuk pengelolaan otorisasi token, *error interceptor*, *safe request*, serta *file uploads*.
+- ✅ **Error Handling Kuat** — `failures.dart` diimplementasikan dengan `Freezed` (*union class*) dan `exceptions.dart` untuk standardisasi manajemen *error*.
+- ✅ **GetX Mixins & UI Standar** — Fitur *lazy tab navigation mixin* disiapkan beserta *scaffolding* untuk `SplashScreen` dan `Dashboard` lengkap dengan Controller, Binding, dan View.
+
+---
+
 ## 📁 Struktur Project
 
 ```
@@ -337,7 +420,8 @@ flutter_generator/
 │   ├── flutter_generator.dart     # Menu utama (entry point)
 │   ├── generate.dart              # CLI JSON to Entity & Model
 │   ├── generate_usecase.dart      # CLI Usecase Generator
-│   └── generate_getx.dart         # CLI GetX Presentation Generator
+│   ├── generate_getx.dart         # CLI GetX Presentation Generator
+│   └── generate_init.dart         # CLI Initial Setup Project Generator
 ├── lib/
 │   ├── flutter_generator.dart     # Barrel export
 │   └── src/
@@ -345,7 +429,8 @@ flutter_generator/
 │       │   ├── entity_builder.dart
 │       │   ├── model_builder.dart
 │       │   ├── usecase_builder.dart
-│       │   └── getx_presentation_builder.dart
+│       │   ├── getx_presentation_builder.dart
+│       │   └── init_builder.dart
 │       ├── core/
 │       │   ├── models.dart
 │       │   ├── string_extensions.dart

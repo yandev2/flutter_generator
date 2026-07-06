@@ -210,7 +210,6 @@ Generator akan membuat folder `lib/domain/usecase/auth_usecase/` berisi:
 ```dart
 import '../../entity/request/auth_entity.dart';
 import '../../entity/response/user_entity.dart';
-import 'package:fpdart/fpdart.dart';
 import '../../repository/auth_repository.dart';
 
 class LoginUsecase {
@@ -232,7 +231,7 @@ class LoginUsecase {
 ### Fitur Unggulan
 - ✅ **Analyzer AST** — Menggunakan Dart Analyzer untuk membaca kode secara akurat (bukan Regex)
 - ✅ **Either Transformer** — Otomatis mengubah `Either<Failure, T>` menjadi `T` langsung
-- ✅ **Smart Import** — Menyalin semua import dari repository asal agar tidak ada missing import
+- ✅ **Smart Import** — Hanya mengimpor tipe yang dipakai method tersebut, dengan path relative yang di-rewrite otomatis ke folder usecase
 - ✅ **1 Method = 1 File** — Setiap method di repository menghasilkan file Usecase terpisah
 
 ---

@@ -2,12 +2,41 @@ import 'dart:io';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 
+class ParsedImport {
+  final String uri;
+  final List<String>? showNames;
+
+  ParsedImport({
+    required this.uri,
+    this.showNames,
+  });
+
+  factory ParsedImport.fromDirective(ImportDirective directive) {
+    final uri = directive.uri.stringValue ??
+        directive.uri
+            .toSource()
+            .replaceAll("'", '')
+            .replaceAll('"', '')
+            .trim();
+
+    List<String>? showNames;
+    for (final combinator in directive.combinators) {
+      if (combinator is ShowCombinator) {
+        showNames = combinator.shownNames.map((name) => name.name).toList();
+      }
+    }
+
+    return ParsedImport(uri: uri, showNames: showNames);
+  }
+}
+
 class ParsedMethod {
   final String name;
   final String returnType;
-  final String rightType; // Tipe data kesuksesan (Right side of Either)
-  final String parameters; // e.g. "(AuthEntity data)"
-  final String parameterNames; // e.g. "data"
+  final String rightType;
+  final String parameters;
+  final String parameterNames;
+  final Set<String> requiredTypes;
 
   ParsedMethod({
     required this.name,
@@ -15,22 +44,43 @@ class ParsedMethod {
     required this.rightType,
     required this.parameters,
     required this.parameterNames,
+    required this.requiredTypes,
   });
 }
 
 class ParsedRepository {
   final String name;
-  final List<String> imports;
+  final List<ParsedImport> parsedImports;
   final List<ParsedMethod> methods;
 
   ParsedRepository({
     required this.name,
-    required this.imports,
+    required this.parsedImports,
     required this.methods,
   });
 }
 
 class RepositoryParser {
+  static const _ignoredTypes = {
+    'Failure',
+    'Either',
+    'Future',
+    'void',
+    'dynamic',
+    'Object',
+    'String',
+    'int',
+    'bool',
+    'double',
+    'num',
+    'List',
+    'Map',
+    'Set',
+    'Record',
+    'Null',
+    'Never',
+  };
+
   ParsedRepository parse(String filePath, String targetClassName) {
     final file = File(filePath);
     if (!file.existsSync()) {
@@ -41,13 +91,13 @@ class RepositoryParser {
     final result = parseString(content: content);
     final unit = result.unit;
 
-    final imports = <String>[];
+    final parsedImports = <ParsedImport>[];
     String? repoName;
     final methods = <ParsedMethod>[];
 
     for (var directive in unit.directives) {
       if (directive is ImportDirective) {
-        imports.add(directive.toSource());
+        parsedImports.add(ParsedImport.fromDirective(directive));
       }
     }
 
@@ -62,19 +112,27 @@ class RepositoryParser {
             final returnType = member.returnType?.toSource() ?? 'dynamic';
             final parameters = member.parameters?.toSource() ?? '()';
 
-            // Ekstrak parameter names untuk passing
             final paramNamesList = <String>[];
+            final requiredTypes = <String>{};
+
+            if (member.returnType != null) {
+              _collectFromTypeAnnotation(member.returnType, requiredTypes);
+            }
+
             if (member.parameters != null) {
               for (var param in member.parameters!.parameters) {
                 if (param.name != null) {
                   paramNamesList.add(param.name!.lexeme);
                 }
+                _collectFromTypeAnnotation(
+                  _parameterType(param),
+                  requiredTypes,
+                );
               }
             }
-            final paramNames = paramNamesList.join(', ');
 
-            // Ekstrak RightType dari Either<Failure, RightType>
-            String rightType = _extractRightType(returnType);
+            final paramNames = paramNamesList.join(', ');
+            final rightType = _extractRightType(returnType);
 
             methods.add(
               ParsedMethod(
@@ -83,6 +141,7 @@ class RepositoryParser {
                 rightType: rightType,
                 parameters: parameters,
                 parameterNames: paramNames,
+                requiredTypes: requiredTypes,
               ),
             );
           }
@@ -94,23 +153,65 @@ class RepositoryParser {
       throw Exception('Tidak menemukan class di dalam file $filePath');
     }
 
-    return ParsedRepository(name: repoName, imports: imports, methods: methods);
+    return ParsedRepository(
+      name: repoName,
+      parsedImports: parsedImports,
+      methods: methods,
+    );
+  }
+
+  static TypeAnnotation? _parameterType(FormalParameter param) {
+    if (param is SimpleFormalParameter) {
+      return param.type;
+    }
+    if (param is FieldFormalParameter) {
+      return param.type;
+    }
+    if (param is SuperFormalParameter) {
+      return param.type;
+    }
+    return null;
+  }
+
+  static void _collectFromTypeAnnotation(
+    TypeAnnotation? annotation,
+    Set<String> types,
+  ) {
+    if (annotation == null) {
+      return;
+    }
+    _visitTypeNode(annotation, types);
+  }
+
+  static void _visitTypeNode(AstNode node, Set<String> types) {
+    if (node is NamedType) {
+      final typeName = node.name2.lexeme;
+      if (!_ignoredTypes.contains(typeName)) {
+        types.add(typeName);
+      }
+
+      final typeArgs = node.typeArguments?.arguments;
+      if (typeArgs != null) {
+        for (final arg in typeArgs) {
+          if (arg is TypeAnnotation) {
+            _collectFromTypeAnnotation(arg, types);
+          }
+        }
+      }
+    }
   }
 
   /// Mengekstrak tipe Right dari `Either<Failure, RightType>`
   /// menggunakan bracket-counting agar mendukung nested generics
   /// seperti `Either<Failure, List<UserEntity>>`
   String _extractRightType(String returnType) {
-    // Cari posisi 'Either<' di dalam returnType
     final eitherIndex = returnType.indexOf('Either<');
     if (eitherIndex == -1) return 'dynamic';
 
-    // Mulai dari setelah 'Either<'
     final start = eitherIndex + 'Either<'.length;
     int depth = 0;
     int commaIndex = -1;
 
-    // Cari posisi koma pemisah antara Left dan Right type
     for (int i = start; i < returnType.length; i++) {
       if (returnType[i] == '<') {
         depth++;
@@ -124,7 +225,6 @@ class RepositoryParser {
 
     if (commaIndex == -1) return 'dynamic';
 
-    // Cari posisi '>' penutup terakhir dari Either
     int closingIndex = -1;
     depth = 0;
     for (int i = commaIndex + 1; i < returnType.length; i++) {

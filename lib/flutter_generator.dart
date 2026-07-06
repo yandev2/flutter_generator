@@ -16,3 +16,4 @@ export 'src/parser/repository_parser.dart';
 export 'src/core/string_extensions.dart';
 export 'src/core/models.dart';
 export 'src/core/route_injector.dart';
+export 'src/core/import_resolver.dart';

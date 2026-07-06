@@ -1,17 +1,28 @@
+import '../core/import_resolver.dart';
 import '../parser/repository_parser.dart';
 import '../core/string_extensions.dart';
 
 class UsecaseBuilder {
-  String build(ParsedRepository repository, ParsedMethod method) {
+  String build(
+    ParsedRepository repository,
+    ParsedMethod method, {
+    required String repositoryFilePath,
+    required String usecaseFilePath,
+  }) {
     final buffer = StringBuffer();
     final usecaseName = '${method.name.toPascalCase()}Usecase';
 
-    // Tulis ulang semua import dari repository asalnya
-    for (var importLine in repository.imports) {
+    final imports = ImportResolver.resolve(
+      repository: repository,
+      method: method,
+      repositoryFilePath: repositoryFilePath,
+      usecaseFilePath: usecaseFilePath,
+    );
+
+    for (final importLine in imports) {
       buffer.writeln(importLine);
     }
 
-    // Import repository aslinya.
     final repoFileName = '${repository.name.toSnakeCase()}.dart';
     buffer.writeln("import '../../repository/$repoFileName';");
     buffer.writeln();
@@ -22,7 +33,7 @@ class UsecaseBuilder {
     buffer.writeln("  $usecaseName(this.repository);");
     buffer.writeln();
 
-    final paramsDef = method.parameters; // sudah memiliki ()
+    final paramsDef = method.parameters;
 
     buffer.writeln(
         "  Future<${method.rightType}> call$paramsDef async {");

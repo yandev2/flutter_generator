@@ -643,8 +643,9 @@ final ThemeData darkTheme = ThemeData(
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+ final isDarkMode = false.obs;
 class ThemeManager extends GetxController {
-  final isDarkMode = false.obs;
+ 
 
   void toggleTheme() {
     isDarkMode.value = !isDarkMode.value;
@@ -689,7 +690,7 @@ class MyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           theme: lightTheme,
           darkTheme: darkTheme,
-          themeMode: isDark.isTrue ? ThemeMode.dark : ThemeMode.light,
+          themeMode: isDarkMode.isTrue ? ThemeMode.dark : ThemeMode.light,
           initialRoute: RouteName.splashScreen,
           initialBinding: InitialBinding(),
           getPages: AppRoute.pages,

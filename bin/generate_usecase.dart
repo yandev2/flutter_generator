@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_generator/src/parser/repository_parser.dart';
 import 'package:flutter_generator/src/builder/usecase_builder.dart';
 import 'package:flutter_generator/src/core/string_extensions.dart';
+import 'package:flutter_generator/src/core/import_resolver.dart';
 
 void main(List<String> args) {
   print('=== Flutter Usecase Generator ===');
@@ -45,10 +46,27 @@ void main(List<String> args) {
     }
 
     for (var method in parsedRepo.methods) {
-      final usecaseCode = builder.build(parsedRepo, method);
       final usecaseFileName = '${method.name.toSnakeCase()}_usecase.dart';
+      final usecaseFilePath = '${outputDir.path}/$usecaseFileName';
 
-      final usecaseFile = File('${outputDir.path}/$usecaseFileName');
+      final usecaseCode = builder.build(
+        parsedRepo,
+        method,
+        repositoryFilePath: repoFilePath,
+        usecaseFilePath: usecaseFilePath,
+      );
+
+      final unresolved = ImportResolver.findUnresolvedTypes(
+        repository: parsedRepo,
+        method: method,
+      );
+      if (unresolved.isNotEmpty) {
+        print(
+          '⚠️  ${method.name}: import tidak ditemukan untuk tipe: ${unresolved.join(', ')}',
+        );
+      }
+
+      final usecaseFile = File(usecaseFilePath);
       usecaseFile.writeAsStringSync(usecaseCode);
       print('✅ Generated: ${usecaseFile.path}');
     }

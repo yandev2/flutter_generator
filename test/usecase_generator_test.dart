@@ -333,5 +333,66 @@ abstract class DisbursementRepository {
       expect(code.contains("import '../entity/"), isFalse);
       expect(code.contains('failures.dart'), isFalse);
     });
+
+    test('payment usecase generates named parameter call', () {
+      final repoPath = writeRepository(
+        'payment_repository.dart',
+        '''
+import 'package:dartz/dartz.dart';
+import '../../core/error/failures.dart';
+import '../entity/request/payment_request_entity.dart';
+import '../entity/response/payment_response_entity.dart';
+
+abstract class PaymentRepository {
+  Future<Either<Failure, PaymentResponseEntity>> payment(
+    PaymentRequestEntity param, {
+    bool asGuest = false,
+  });
+}
+''',
+      );
+
+      final parsed = parser.parse(repoPath, 'PaymentRepository');
+      final method = parsed.methods.single;
+
+      expect(method.parameterCall, 'param, asGuest: asGuest');
+
+      final usecaseFilePath =
+          usecasePath('payment_usecase', 'payment_usecase.dart');
+      final code = builder.build(
+        parsed,
+        method,
+        repositoryFilePath: repoPath,
+        usecaseFilePath: usecaseFilePath,
+      );
+
+      expect(
+        code,
+        contains('repository.payment(param, asGuest: asGuest)'),
+      );
+    });
+
+    test('getHistoryTransaction generates named parameter call', () {
+      final repoPath = writeRepository(
+        'muzzaki_repository.dart',
+        '''
+import 'package:dartz/dartz.dart';
+import '../../core/error/failures.dart';
+import '../entity/paginated_list_entity.dart';
+import '../entity/response/muzzaki_transaction_item_list_entity.dart';
+
+abstract class MuzzakiRepository {
+  Future<Either<Failure, PaginatedListEntity<MuzzakiTransactionItemListEntity>>>
+      getHistoryTransaction({String? status, int page = 1});
+}
+''',
+      );
+
+      final parsed = parser.parse(repoPath, 'MuzzakiRepository');
+      final method =
+          parsed.methods.firstWhere((m) => m.name == 'getHistoryTransaction');
+
+      expect(method.parameterCall, 'status: status, page: page');
+    });
   });
 }

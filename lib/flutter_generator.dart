@@ -3,7 +3,7 @@
 /// Package ini menyediakan 3 alat generator otomatis:
 /// 1. JSON to Entity & Model Generator
 /// 2. Usecase Generator
-/// 3. GetX Presentation Generator
+/// 3. Presentation Generator (get_x_master)
 library;
 
 export 'src/generator.dart';

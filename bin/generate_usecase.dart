@@ -36,7 +36,6 @@ void main(List<String> args) {
 
     final builder = UsecaseBuilder();
 
-    // Nama folder output: menghapus kata Repository di belakangnya
     final baseName = repoName.replaceAll(RegExp(r'Repository$', caseSensitive: false), '');
     final usecaseDirName = '${baseName.toSnakeCase()}_usecase';
     final outputDir = Directory('$currentDir/lib/domain/usecase/$usecaseDirName');
@@ -45,8 +44,11 @@ void main(List<String> args) {
       outputDir.createSync(recursive: true);
     }
 
+    final expectedFiles = <String>{};
+
     for (var method in parsedRepo.methods) {
       final usecaseFileName = '${method.name.toSnakeCase()}_usecase.dart';
+      expectedFiles.add(usecaseFileName);
       final usecaseFilePath = '${outputDir.path}/$usecaseFileName';
 
       final usecaseCode = builder.build(
@@ -67,12 +69,41 @@ void main(List<String> args) {
       }
 
       final usecaseFile = File(usecaseFilePath);
+      final existed = usecaseFile.existsSync();
       usecaseFile.writeAsStringSync(usecaseCode);
-      print('✅ Generated: ${usecaseFile.path}');
+      print(
+        existed
+            ? '🔄 Updated: ${usecaseFile.path}'
+            : '✅ Generated: ${usecaseFile.path}',
+      );
     }
+
+    _removeStaleUsecases(outputDir, expectedFiles);
 
     print('🎉 Generate Usecase Selesai!');
   } catch (e) {
     print('❌ Error generating usecase: $e');
+  }
+}
+
+void _removeStaleUsecases(Directory outputDir, Set<String> expectedFiles) {
+  if (!outputDir.existsSync()) {
+    return;
+  }
+
+  for (final entity in outputDir.listSync()) {
+    if (entity is! File) {
+      continue;
+    }
+
+    final fileName = entity.uri.pathSegments.last;
+    if (!fileName.endsWith('_usecase.dart')) {
+      continue;
+    }
+
+    if (!expectedFiles.contains(fileName)) {
+      entity.deleteSync();
+      print('🗑️  Removed stale usecase: ${entity.path}');
+    }
   }
 }

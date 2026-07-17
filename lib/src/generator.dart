@@ -32,6 +32,8 @@ class Generator {
         modelDir.createSync(recursive: true);
       }
 
+      var filesWritten = 0;
+
       for (var classDef in classes) {
         final entityCode = entityBuilder.build(classDef);
         final modelCode = modelBuilder.build(classDef);
@@ -40,22 +42,62 @@ class Generator {
 
         final entityFile =
             File('${entityDir.path}/${fileName}_entity.dart');
+        final entityExisted = entityFile.existsSync();
         entityFile.writeAsStringSync(entityCode);
-        print('✅ Generated Entity: ${entityFile.path}');
+        filesWritten++;
+        print(
+          entityExisted
+              ? '🔄 Updated Entity: ${entityFile.path}'
+              : '✅ Generated Entity: ${entityFile.path}',
+        );
 
         final modelFile =
             File('${modelDir.path}/${fileName}_model.dart');
+        final modelExisted = modelFile.existsSync();
         modelFile.writeAsStringSync(modelCode);
-        print('✅ Generated Model: ${modelFile.path}');
+        filesWritten++;
+        print(
+          modelExisted
+              ? '🔄 Updated Model: ${modelFile.path}'
+              : '✅ Generated Model: ${modelFile.path}',
+        );
+      }
+
+      if (filesWritten == 0) {
+        print('⚠️ Tidak ada file yang di-generate.');
+        return;
+      }
+
+      if (!_hasBuildRunner()) {
+        print(
+          '⚠️ build_runner tidak ditemukan di pubspec.yaml. '
+          'Jalankan manual: dart run build_runner build --delete-conflicting-outputs',
+        );
+        return;
       }
 
       print(
           '🎉 Generate Success! Menjalankan build_runner secara otomatis...');
 
+      final isFlutter = _isFlutterProject();
       final result = Process.runSync(
-        'dart',
-        ['run', 'build_runner', 'build', '--delete-conflicting-outputs'],
+        isFlutter ? 'flutter' : 'dart',
+        isFlutter
+            ? [
+                'pub',
+                'run',
+                'build_runner',
+                'build',
+                '--delete-conflicting-outputs',
+              ]
+            : [
+                'run',
+                'build_runner',
+                'build',
+                '--delete-conflicting-outputs',
+              ],
         runInShell: true,
+        workingDirectory: currentDir,
       );
 
       if (result.exitCode == 0) {
@@ -69,5 +111,23 @@ class Generator {
     } catch (e) {
       print('❌ Error generating code: $e');
     }
+  }
+
+  static bool _hasBuildRunner() {
+    final pubspec = File('${Directory.current.path}/pubspec.yaml');
+    if (!pubspec.existsSync()) {
+      return false;
+    }
+    return pubspec.readAsStringSync().contains('build_runner');
+  }
+
+  static bool _isFlutterProject() {
+    final pubspec = File('${Directory.current.path}/pubspec.yaml');
+    if (!pubspec.existsSync()) {
+      return false;
+    }
+    final content = pubspec.readAsStringSync();
+    return content.contains('flutter:') &&
+        (content.contains('sdk: flutter') || content.contains('sdk:flutter'));
   }
 }

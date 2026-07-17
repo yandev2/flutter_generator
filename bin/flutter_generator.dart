@@ -14,7 +14,7 @@ void main(List<String> args) {
     print('Silakan pilih alat yang ingin dijalankan:');
     print('1. JSON to Entity & Model Generator');
     print('2. Usecase Generator');
-    print('3. GetX Presentation Generator');
+    print('3. Presentation Generator (get_x_master)');
     print('4. Initial Setup Project Generator');
     print('5. Keluar');
     print('=====================================');
@@ -34,7 +34,7 @@ void main(List<String> args) {
       gen_usecase.main(args);
       break;
     } else if (input == '3') {
-      print('\n--- GetX Presentation Generator ---');
+      print('\n--- Presentation Generator (get_x_master) ---');
       gen_getx.main();
       break;
     } else if (input == '4') {

@@ -35,7 +35,7 @@ class ParsedMethod {
   final String returnType;
   final String rightType;
   final String parameters;
-  final String parameterNames;
+  final String parameterCall;
   final Set<String> requiredTypes;
 
   ParsedMethod({
@@ -43,7 +43,7 @@ class ParsedMethod {
     required this.returnType,
     required this.rightType,
     required this.parameters,
-    required this.parameterNames,
+    required this.parameterCall,
     required this.requiredTypes,
   });
 }
@@ -112,7 +112,6 @@ class RepositoryParser {
             final returnType = member.returnType?.toSource() ?? 'dynamic';
             final parameters = member.parameters?.toSource() ?? '()';
 
-            final paramNamesList = <String>[];
             final requiredTypes = <String>{};
 
             if (member.returnType != null) {
@@ -121,9 +120,6 @@ class RepositoryParser {
 
             if (member.parameters != null) {
               for (var param in member.parameters!.parameters) {
-                if (param.name != null) {
-                  paramNamesList.add(param.name!.lexeme);
-                }
                 _collectFromTypeAnnotation(
                   _parameterType(param),
                   requiredTypes,
@@ -131,8 +127,8 @@ class RepositoryParser {
               }
             }
 
-            final paramNames = paramNamesList.join(', ');
             final rightType = _extractRightType(returnType);
+            final parameterCall = _buildParameterCall(member.parameters);
 
             methods.add(
               ParsedMethod(
@@ -140,7 +136,7 @@ class RepositoryParser {
                 returnType: returnType,
                 rightType: rightType,
                 parameters: parameters,
-                parameterNames: paramNames,
+                parameterCall: parameterCall,
                 requiredTypes: requiredTypes,
               ),
             );
@@ -160,7 +156,43 @@ class RepositoryParser {
     );
   }
 
+  static String _buildParameterCall(FormalParameterList? parameterList) {
+    if (parameterList == null) {
+      return '';
+    }
+
+    final args = <String>[];
+    for (final param in parameterList.parameters) {
+      final name = _formalParameterName(param);
+      if (name == null) {
+        continue;
+      }
+
+      if (param.isNamed) {
+        args.add('$name: $name');
+      } else {
+        args.add(name);
+      }
+    }
+
+    return args.join(', ');
+  }
+
+  static String? _formalParameterName(FormalParameter param) {
+    if (param is DefaultFormalParameter) {
+      return param.parameter.name?.lexeme;
+    }
+    return param.name?.lexeme;
+  }
+
   static TypeAnnotation? _parameterType(FormalParameter param) {
+    if (param is DefaultFormalParameter) {
+      return _parameterTypeFromNormal(param.parameter);
+    }
+    return _parameterTypeFromNormal(param);
+  }
+
+  static TypeAnnotation? _parameterTypeFromNormal(FormalParameter param) {
     if (param is SimpleFormalParameter) {
       return param.type;
     }
@@ -185,7 +217,7 @@ class RepositoryParser {
 
   static void _visitTypeNode(AstNode node, Set<String> types) {
     if (node is NamedType) {
-      final typeName = node.name2.lexeme;
+      final typeName = node.name.lexeme;
       if (!_ignoredTypes.contains(typeName)) {
         types.add(typeName);
       }

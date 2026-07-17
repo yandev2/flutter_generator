@@ -38,7 +38,7 @@ class UsecaseBuilder {
     buffer.writeln(
         "  Future<${method.rightType}> call$paramsDef async {");
     buffer.writeln(
-        "    final result = await repository.${method.name}(${method.parameterNames});");
+        "    final result = await repository.${method.name}(${method.parameterCall});");
     buffer.writeln();
     buffer.writeln("    return result.fold(");
     buffer.writeln(

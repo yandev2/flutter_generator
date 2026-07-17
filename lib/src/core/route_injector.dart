@@ -33,7 +33,7 @@ abstract class RouteName {
     if (!file.existsSync()) {
       file.createSync(recursive: true);
       file.writeAsStringSync('''
-import 'package:get/get.dart';
+import 'package:get_x_master/get_x_master.dart';
 import 'route_name.dart';
 
 class AppRoute {
@@ -51,12 +51,11 @@ class AppRoute {
     final routeString =
         "  static const $camelPageName = '/${pageName.toSnakeCase()}';";
 
-    if (content.contains(routeString)) {
+    if (_routeNameExists(content, camelPageName)) {
       print('⚠️ RouteName $camelPageName sudah ada. Skip inject.');
       return;
     }
 
-    // Insert sebelum kurung kurawal penutup terakhir
     final lastBraceIndex = content.lastIndexOf('}');
     if (lastBraceIndex != -1) {
       final newContent =
@@ -67,24 +66,16 @@ class AppRoute {
   }
 
   void _injectAppRoute(File file, String featureName, String pageName) {
-    String content = file.readAsStringSync();
+    var content = file.readAsStringSync();
     final camelPageName = pageName.toCamelCase();
     final viewName = '${pageName.toPascalCase()}View';
     final bindingName = '${pageName.toPascalCase()}Binding';
 
-    final getPageString = '''
-    GetPage(
-      name: RouteName.$camelPageName,
-      page: () => const $viewName(),
-      binding: $bindingName(),
-    ),''';
-
-    if (content.contains('RouteName.$camelPageName')) {
+    if (_routePageExists(content, camelPageName)) {
       print('⚠️ AppRoute untuk $camelPageName sudah ada. Skip inject.');
       return;
     }
 
-    // 1. Inject Imports
     final featureDir = featureName.toSnakeCase();
     final pageSnake = pageName.toSnakeCase();
 
@@ -93,18 +84,19 @@ class AppRoute {
     final viewImport =
         "import '../../presentation/$featureDir/views/${pageSnake}_view.dart';";
 
-    // Cari letak import terakhir
-    final lastImportIndex = content.lastIndexOf('import ');
-    if (lastImportIndex != -1) {
-      final endOfLastImport = content.indexOf(';', lastImportIndex) + 1;
-      content =
-          '${content.substring(0, endOfLastImport)}\n$bindingImport\n$viewImport${content.substring(endOfLastImport)}';
-    } else {
-      content = '$bindingImport\n$viewImport\n$content';
-    }
+    content = _appendImportsIfMissing(
+      content,
+      [bindingImport, viewImport],
+    );
 
-    // 2. Inject GetPage
-    final closingBracketIndex = content.lastIndexOf('];');
+    final getPageString = '''
+    GetPage(
+      name: RouteName.$camelPageName,
+      page: () => const $viewName(),
+      binding: $bindingName(),
+    ),''';
+
+    final closingBracketIndex = _findPagesListClosingIndex(content);
     if (closingBracketIndex != -1) {
       content =
           '${content.substring(0, closingBracketIndex)}$getPageString\n  ${content.substring(closingBracketIndex)}';
@@ -113,5 +105,79 @@ class AppRoute {
     } else {
       print('❌ Gagal mencari "];" di AppRoute. Silakan inject manual.');
     }
+  }
+
+  static bool _routeNameExists(String content, String camelPageName) {
+    return RegExp('static\\s+const\\s+$camelPageName\\b').hasMatch(content);
+  }
+
+  static bool _routePageExists(String content, String camelPageName) {
+    return content.contains('RouteName.$camelPageName');
+  }
+
+  static String _appendImportsIfMissing(
+    String content,
+    List<String> imports,
+  ) {
+    var updated = content;
+    for (final importLine in imports) {
+      if (_hasImport(updated, importLine)) {
+        continue;
+      }
+      updated = _insertImport(updated, importLine);
+    }
+    return updated;
+  }
+
+  static bool _hasImport(String content, String importLine) {
+    final uri = _extractImportUri(importLine);
+    return content.contains(uri);
+  }
+
+  static String _extractImportUri(String importLine) {
+    final start = importLine.indexOf("'") + 1;
+    final end = importLine.lastIndexOf("'");
+    if (start <= 0 || end <= start) {
+      return importLine;
+    }
+    return importLine.substring(start, end);
+  }
+
+  static String _insertImport(String content, String importLine) {
+    final lastImportIndex = content.lastIndexOf('import ');
+    if (lastImportIndex != -1) {
+      final endOfLastImport = content.indexOf(';', lastImportIndex) + 1;
+      return '${content.substring(0, endOfLastImport)}\n$importLine${content.substring(endOfLastImport)}';
+    }
+    return '$importLine\n$content';
+  }
+
+  static int _findPagesListClosingIndex(String content) {
+    final pagesKeyword = RegExp(r'static\s+final\s+pages\s*=\s*\[');
+    final match = pagesKeyword.firstMatch(content);
+    if (match == null) {
+      return content.lastIndexOf('];');
+    }
+
+    var index = match.end;
+    var depth = 1;
+    while (index < content.length && depth > 0) {
+      final char = content[index];
+      if (char == '[') {
+        depth++;
+      } else if (char == ']') {
+        depth--;
+        if (depth == 0) {
+          final semicolonIndex = index + 1;
+          if (semicolonIndex < content.length && content[semicolonIndex] == ';') {
+            return semicolonIndex + 1;
+          }
+          return index;
+        }
+      }
+      index++;
+    }
+
+    return content.lastIndexOf('];');
   }
 }

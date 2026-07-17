@@ -4,7 +4,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-Compatible-02569B.svg)](https://flutter.dev)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**Flutter Generator Pro** adalah *Custom CLI Package* yang dirancang khusus untuk mempercepat proses *development* aplikasi Flutter yang menggunakan **Clean Architecture** dan **GetX**. Package ini mengotomatisasi pembuatan *boilerplate code* sehingga Anda bisa fokus pada logika bisnis utama.
+**Flutter Generator Pro** adalah *Custom CLI Package* yang dirancang khusus untuk mempercepat proses *development* aplikasi Flutter yang menggunakan **Clean Architecture** dan **get_x_master**. Package ini mengotomatisasi pembuatan *boilerplate code* sehingga Anda bisa fokus pada logika bisnis utama.
 
 ---
 
@@ -14,7 +14,7 @@
 - [Cara Penggunaan](#-cara-penggunaan)
 - [Generator 1: JSON to Entity & Model](#-1-json-to-entity--model-generator)
 - [Generator 2: Usecase Generator](#-2-usecase-generator)
-- [Generator 3: GetX Presentation Generator](#-3-getx-presentation-generator)
+- [Generator 3: Presentation Generator (get_x_master)](#-3-presentation-generator-get_x_master)
 - [Generator 4: Initial Setup Project](#-4-initial-setup-project-generator)
 - [Struktur Project](#-struktur-project)
 - [Catatan Penting](#-catatan-penting)
@@ -58,7 +58,7 @@ Menu interaktif akan muncul di terminal:
 Silakan pilih alat yang ingin dijalankan:
 1. JSON to Entity & Model Generator
 2. Usecase Generator
-3. GetX Presentation Generator
+3. Presentation Generator (get_x_master)
 4. Initial Setup Project Generator
 5. Keluar
 =====================================
@@ -70,7 +70,7 @@ Pilih angka sesuai generator yang ingin dijalankan. Anda juga dapat menjalankan 
 ```bash
 dart run flutter_generator:gen_model      # JSON to Entity & Model
 dart run flutter_generator:gen_usecase    # Usecase Generator
-dart run flutter_generator:gen_getx       # GetX Presentation Generator
+dart run flutter_generator:gen_getx       # Presentation Generator (get_x_master)
 dart run flutter_generator:generate_init  # Initial Setup Project Generator
 ```
 
@@ -236,14 +236,14 @@ class LoginUsecase {
 
 ---
 
-## 🌟 3. GetX Presentation Generator
+## 🌟 3. Presentation Generator (get_x_master)
 
-Membuat *scaffolding* untuk lapisan **Presentation** berbasis GetX secara instan.
+Membuat *scaffolding* untuk lapisan **Presentation** berbasis [get_x_master](https://pub.dev/packages/get_x_master) secara instan.
 
 ### Cara Pakai
 
 ```
-=== Flutter GetX Presentation Generator ===
+=== Flutter Presentation Generator (get_x_master) ===
 Masukkan nama Fitur (contoh: auth): auth
 Masukkan nama Page/Layar (contoh: login): login
 ✅ Generated: .../lib/presentation/auth/controllers/login_controller.dart
@@ -252,7 +252,7 @@ Masukkan nama Page/Layar (contoh: login): login
 Apakah Anda ingin meng-inject Route ini ke lib/service/route/? (y/n): y
 ✅ Injected login ke RouteName.
 ✅ Injected GetPage login ke AppRoute.
-🎉 GetX Presentation Generator Selesai!
+🎉 Presentation Generator Selesai!
 ```
 
 ### Hasil Output — Struktur Folder
@@ -298,7 +298,7 @@ abstract class RouteName {
 
 **`lib/service/route/app_route.dart`**:
 ```dart
-import 'package:get/get.dart';
+import 'package:get_x_master/get_x_master.dart';
 import 'route_name.dart';
 import '../../presentation/auth/bindings/login_binding.dart';
 import '../../presentation/auth/views/login_view.dart';
@@ -321,11 +321,25 @@ class AppRoute {
 }
 ```
 
+**Contoh generated view (`login_view.dart`):**
+```dart
+import 'package:get_x_master/get_x_master.dart';
+
+class LoginView extends ReactiveGetView<LoginController> {
+  // ...
+}
+```
+
+**Contoh generated binding (`login_binding.dart`):**
+```dart
+Get.smartLazyPut<LoginController>(() => LoginController());
+```
+
 Jika Anda memilih `n`, tidak ada modifikasi route yang dilakukan.
 
 ### Fitur Unggulan
-- ✅ **GetView Standard** — View langsung menggunakan `GetView<Controller>`, tanpa perlu `Get.find()`
-- ✅ **LazyPut Binding** — Binding menggunakan `Get.lazyPut` untuk efisiensi memori
+- ✅ **ReactiveGetView** — View reaktif otomatis tanpa wrapper `Obx()` manual
+- ✅ **smartLazyPut Binding** — Binding menggunakan `Get.smartLazyPut` untuk lifecycle DI yang lebih pintar
 - ✅ **Smart Merge** — Tidak menimpa file/folder yang sudah ada
 - ✅ **Route Injector** — Otomatis menambahkan `RouteName` dan `GetPage` ke file routing
 
@@ -333,7 +347,7 @@ Jika Anda memilih `n`, tidak ada modifikasi route yang dilakukan.
 
 ## 🌟 4. Initial Setup Project Generator
 
-Membuat struktur folder dasar (Clean Architecture) dan *file boilerplate* penting untuk memulai project Flutter dengan GetX.
+Membuat struktur folder dasar (Clean Architecture) dan *file boilerplate* penting untuk memulai project Flutter dengan get_x_master.
 
 ### Cara Pakai
 
@@ -407,7 +421,7 @@ lib/
 - ✅ **Setup Lengkap `main.dart`** — Terintegrasi dengan `GetMaterialApp`, `ScreenUtilInit`, tema (*dark/light*), *routing*, pengaturan zona waktu, dan *scale text* yang dinamis.
 - ✅ **Network via Dio** — `api_client.dart` menggunakan package `Dio` untuk pengelolaan otorisasi token, *error interceptor*, *safe request*, serta *file uploads*.
 - ✅ **Error Handling Kuat** — `failures.dart` diimplementasikan dengan `Freezed` (*union class*) dan `exceptions.dart` untuk standardisasi manajemen *error*.
-- ✅ **GetX Mixins & UI Standar** — Fitur *lazy tab navigation mixin* disiapkan beserta *scaffolding* untuk `SplashScreen` dan `Dashboard` lengkap dengan Controller, Binding, dan View.
+- ✅ **get_x_master Mixins & UI Standar** — Fitur *lazy tab navigation mixin* disiapkan beserta *scaffolding* untuk `SplashScreen` dan `Dashboard` lengkap dengan Controller, Binding, dan `ReactiveGetView`.
 
 ---
 
@@ -419,7 +433,7 @@ flutter_generator/
 │   ├── flutter_generator.dart     # Menu utama (entry point)
 │   ├── generate.dart              # CLI JSON to Entity & Model
 │   ├── generate_usecase.dart      # CLI Usecase Generator
-│   ├── generate_getx.dart         # CLI GetX Presentation Generator
+│   ├── generate_getx.dart         # CLI Presentation Generator (get_x_master)
 │   └── generate_init.dart         # CLI Initial Setup Project Generator
 ├── lib/
 │   ├── flutter_generator.dart     # Barrel export
@@ -449,8 +463,18 @@ flutter_generator/
 ## ⚠️ Catatan Penting
 
 1. **Jalankan di root project** — Pastikan terminal Anda berada di root folder project Flutter tujuan (bukan di folder package ini).
-2. **Freezed & Build Runner** — Pastikan project tujuan Anda memiliki `freezed`, `freezed_annotation`, `build_runner`, `json_serializable`, dan `json_annotation` di `pubspec.yaml`.
-3. **GetX** — Untuk GetX Presentation Generator, pastikan `get` sudah terdaftar sebagai dependency di project tujuan.
+2. **Freezed & Build Runner** — Pastikan project tujuan memiliki dependency berikut:
+   ```yaml
+   dependencies:
+     freezed_annotation: ^3.1.0
+     json_annotation: ^4.12.0
+   dev_dependencies:
+     freezed: ^3.2.5
+     build_runner: ^2.15.2
+     json_serializable: ^6.14.0
+   ```
+   Lalu jalankan `dart run build_runner build --delete-conflicting-outputs`.
+3. **get_x_master** — Untuk Presentation Generator dan Initial Setup, pastikan `get_x_master: ^0.0.35` sudah terdaftar sebagai dependency di project tujuan (ganti package `get` jika sebelumnya memakai GetX).
 4. **Either/fpdart** — Untuk Usecase Generator, pastikan Anda sudah menggunakan package `fpdart` atau `dartz` di repository.
 
 ---

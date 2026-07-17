@@ -84,15 +84,17 @@ class InitBuilder {
       '📦 Pastikan Anda telah menambahkan package berikut di pubspec.yaml:',
     );
     print('dependencies:');
-    print('  - get');
+    print('  - get_x_master: ^0.0.35');
     print('  - dio');
-    print('  - freezed_annotation');
+    print('  - freezed_annotation: ^3.1.0');
+    print('  - json_annotation: ^4.12.0');
     print('  - shared_preferences');
     print('  - intl');
     print('  - flutter_screenutil');
     print('\ndev_dependencies:');
-    print('  - freezed');
-    print('  - build_runner\n');
+    print('  - freezed: ^3.2.5');
+    print('  - build_runner: ^2.15.2');
+    print('  - json_serializable: ^6.14.0');
     print(
       'Silakan jalankan `flutter pub get` lalu `dart run build_runner build -d` untuk men-generate file freezed.',
     );
@@ -227,7 +229,7 @@ class ValidationException implements Exception {
 
   static const String _lazyTabNavigationTemplate = '''
 import 'package:flutter/scheduler.dart';
-import 'package:get/get.dart';
+import 'package:get_x_master/get_x_master.dart';
 
 mixin LazyTabNavigation on GetxController {
   int get tabCount;
@@ -269,7 +271,7 @@ mixin LazyTabNavigation on GetxController {
 ''';
 
   static const String _tabLoadableTemplate = '''
-import 'package:get/get.dart';
+import 'package:get_x_master/get_x_master.dart';
 
 /// Mixin untuk tab controller di [IndexedStack] navigation.
 /// Data hanya di-fetch saat tab pertama kali aktif atau saat [refresh] diminta.
@@ -527,7 +529,7 @@ class ApiClient {
 ''';
 
   static const String _authServiceTemplate = '''
-import 'package:get/get.dart';
+import 'package:get_x_master/get_x_master.dart';
 import '../route/route_name.dart';
 
 class AuthService extends GetxService {
@@ -564,23 +566,21 @@ class AuthService extends GetxService {
 ''';
 
   static const String _diTemplate = '''
-import 'package:get/get.dart';
+import 'package:get_x_master/get_x_master.dart';
 import '../../core/network/api_client.dart';
 import '../auth/auth_service.dart';
-import '../theme/theme_manager.dart';
 
 class InitialBinding implements Bindings {
   @override
   void dependencies() {
-    Get.put(ThemeManager(), permanent: true);
-    Get.lazyPut<ApiClient>(() => ApiClient(), fenix: true);
+    Get.smartLazyPut<ApiClient>(() => ApiClient(), fenix: true);
     Get.put(AuthService(), permanent: true);
   }
 }
 ''';
 
   static const String _appRouteTemplate = '''
-import 'package:get/get.dart';
+import 'package:get_x_master/get_x_master.dart';
 import 'route_name.dart';
 import '../../presentation/main/splash_screen/bindings/splash_screen_binding.dart';
 import '../../presentation/main/splash_screen/views/splash_screen_view.dart';
@@ -641,11 +641,10 @@ final ThemeData darkTheme = ThemeData(
 
   static const String _themeManagerTemplate = '''
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get_x_master/get_x_master.dart';
 
- final isDarkMode = false.obs;
 class ThemeManager extends GetxController {
- 
+  final isDarkMode = false.obs;
 
   void toggleTheme() {
     isDarkMode.value = !isDarkMode.value;
@@ -657,7 +656,7 @@ class ThemeManager extends GetxController {
   static const String _mainTemplate = '''
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get/get.dart';
+import 'package:get_x_master/get_x_master.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ui_component_flutter/theme/app_scale.dart';
@@ -671,6 +670,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
   final prefs = await SharedPreferences.getInstance();
+  Get.put(ThemeManager(), permanent: true);
   Get.put(prefs, permanent: true);
   runApp(const MyApp());
 }
@@ -690,7 +690,9 @@ class MyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           theme: lightTheme,
           darkTheme: darkTheme,
-          themeMode: isDarkMode.isTrue ? ThemeMode.dark : ThemeMode.light,
+          themeMode: Get.find<ThemeManager>().isDarkMode.isTrue
+              ? ThemeMode.dark
+              : ThemeMode.light,
           initialRoute: RouteName.splashScreen,
           initialBinding: InitialBinding(),
           getPages: AppRoute.pages,
@@ -710,13 +712,13 @@ class MyApp extends StatelessWidget {
 ''';
 
   static const String _splashBindingTemplate = '''
-import 'package:get/get.dart';
+import 'package:get_x_master/get_x_master.dart';
 import '../controllers/splash_screen_controller.dart';
 
 class SplashScreenBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<SplashScreenController>(
+    Get.smartLazyPut<SplashScreenController>(
       () => SplashScreenController(),
     );
   }
@@ -724,7 +726,7 @@ class SplashScreenBinding extends Bindings {
 ''';
 
   static const String _splashControllerTemplate = '''
-import 'package:get/get.dart';
+import 'package:get_x_master/get_x_master.dart';
 import '../../../../service/route/route_name.dart';
 
 class SplashScreenController extends GetxController {
@@ -740,10 +742,10 @@ class SplashScreenController extends GetxController {
 
   static const String _splashViewTemplate = '''
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get_x_master/get_x_master.dart';
 import '../controllers/splash_screen_controller.dart';
 
-class SplashScreenView extends GetView<SplashScreenController> {
+class SplashScreenView extends ReactiveGetView<SplashScreenController> {
   const SplashScreenView({super.key});
 
   @override
@@ -758,13 +760,13 @@ class SplashScreenView extends GetView<SplashScreenController> {
 ''';
 
   static const String _dashboardBindingTemplate = '''
-import 'package:get/get.dart';
+import 'package:get_x_master/get_x_master.dart';
 import '../controllers/dashboard_controller.dart';
 
 class DashboardBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<DashboardController>(
+    Get.smartLazyPut<DashboardController>(
       () => DashboardController(),
     );
   }
@@ -772,7 +774,7 @@ class DashboardBinding extends Bindings {
 ''';
 
   static const String _dashboardControllerTemplate = '''
-import 'package:get/get.dart';
+import 'package:get_x_master/get_x_master.dart';
 
 class DashboardController extends GetxController {
   final count = 0.obs;
@@ -783,10 +785,10 @@ class DashboardController extends GetxController {
 
   static const String _dashboardViewTemplate = '''
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get_x_master/get_x_master.dart';
 import '../controllers/dashboard_controller.dart';
 
-class DashboardView extends GetView<DashboardController> {
+class DashboardView extends ReactiveGetView<DashboardController> {
   const DashboardView({super.key});
 
   @override
@@ -797,11 +799,9 @@ class DashboardView extends GetView<DashboardController> {
         centerTitle: true,
       ),
       body: Center(
-        child: Obx(
-          () => Text(
-            'Count: \${controller.count}',
-            style: const TextStyle(fontSize: 24),
-          ),
+        child: Text(
+          'Count: \${controller.count}',
+          style: const TextStyle(fontSize: 24),
         ),
       ),
       floatingActionButton: FloatingActionButton(

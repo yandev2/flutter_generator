@@ -5,7 +5,7 @@ import 'package:flutter_generator/src/core/route_injector.dart';
 import 'package:flutter_generator/src/core/string_extensions.dart';
 
 void main() {
-  print('=== Flutter GetX Presentation Generator ===');
+  print('=== Flutter Presentation Generator (get_x_master) ===');
 
   stdout.write('Masukkan nama Fitur (contoh: auth): ');
   final featureInput = stdin.readLineSync()?.trim();
@@ -87,5 +87,5 @@ void main() {
     injector.inject(featureName, pageName);
   }
 
-  print('🎉 GetX Presentation Generator Selesai!');
+  print('🎉 Presentation Generator Selesai!');
 }

@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_generator/src/builder/getx_presentation_builder.dart';
-import 'package:flutter_generator/src/builder/init_builder.dart';
 import 'package:flutter_generator/src/core/route_injector.dart';
 
 void main() {

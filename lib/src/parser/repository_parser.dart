@@ -103,10 +103,10 @@ class RepositoryParser {
 
     for (var declaration in unit.declarations) {
       if (declaration is ClassDeclaration &&
-          declaration.name.lexeme == targetClassName) {
-        repoName = declaration.name.lexeme;
+          declaration.namePart.typeName.lexeme == targetClassName) {
+        repoName = declaration.namePart.typeName.lexeme;
 
-        for (var member in declaration.members) {
+        for (var member in declaration.body.members) {
           if (member is MethodDeclaration) {
             final methodName = member.name.lexeme;
             final returnType = member.returnType?.toSource() ?? 'dynamic';
@@ -225,9 +225,7 @@ class RepositoryParser {
       final typeArgs = node.typeArguments?.arguments;
       if (typeArgs != null) {
         for (final arg in typeArgs) {
-          if (arg is TypeAnnotation) {
-            _collectFromTypeAnnotation(arg, types);
-          }
+          _collectFromTypeAnnotation(arg, types);
         }
       }
     }

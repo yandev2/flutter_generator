@@ -92,8 +92,8 @@ class InitBuilder {
     print('  - intl');
     print('  - flutter_screenutil');
     print('\ndev_dependencies:');
-    print('  - freezed: ^3.2.5');
-    print('  - build_runner: ^2.15.2');
+    print('  - freezed: ^3.2.6-dev.1');
+    print('  - build_runner: ^2.15.1');
     print('  - json_serializable: ^6.14.0');
     print(
       'Silakan jalankan `flutter pub get` lalu `dart run build_runner build -d` untuk men-generate file freezed.',

@@ -2,6 +2,7 @@
 import 'dart:io';
 import 'package:flutter_generator/src/parser/repository_parser.dart';
 import 'package:flutter_generator/src/builder/usecase_builder.dart';
+import 'package:flutter_generator/src/core/presentation_wiring_injector.dart';
 import 'package:flutter_generator/src/core/string_extensions.dart';
 import 'package:flutter_generator/src/core/import_resolver.dart';
 
@@ -79,6 +80,31 @@ void main(List<String> args) {
     }
 
     _removeStaleUsecases(outputDir, expectedFiles);
+
+    stdout.write(
+      '\nInject usecase provider ke presentation layer (auto-wiring)? (y/n): ',
+    );
+    final injectInput = stdin.readLineSync()?.trim().toLowerCase();
+    if (injectInput == 'y') {
+      stdout.write('Masukkan nama Fitur (contoh: auth): ');
+      final featureInput = stdin.readLineSync()?.trim();
+      stdout.write('Masukkan nama Page (contoh: login): ');
+      final pageInput = stdin.readLineSync()?.trim();
+
+      if (featureInput == null ||
+          featureInput.isEmpty ||
+          pageInput == null ||
+          pageInput.isEmpty) {
+        print('❌ Nama Fitur dan Page wajib diisi untuk auto-wiring.');
+      } else {
+        PresentationWiringInjector(currentDir).inject(
+          featureName: featureInput,
+          pageName: pageInput,
+          repositoryName: repoName,
+          methods: parsedRepo.methods,
+        );
+      }
+    }
 
     print('🎉 Generate Usecase Selesai!');
   } catch (e) {

@@ -2,7 +2,7 @@
 import 'dart:io';
 import 'generate.dart' as gen_model;
 import 'generate_usecase.dart' as gen_usecase;
-import 'generate_getx.dart' as gen_getx;
+import 'generate_page.dart' as gen_page;
 import 'generate_init.dart' as gen_init;
 
 void main(List<String> args) {
@@ -14,7 +14,7 @@ void main(List<String> args) {
     print('Silakan pilih alat yang ingin dijalankan:');
     print('1. JSON to Entity & Model Generator');
     print('2. Usecase Generator');
-    print('3. Presentation Generator (get_x_master)');
+    print('3. Presentation Generator (Riverpod)');
     print('4. Initial Setup Project Generator');
     print('5. Keluar');
     print('=====================================');
@@ -34,8 +34,8 @@ void main(List<String> args) {
       gen_usecase.main(args);
       break;
     } else if (input == '3') {
-      print('\n--- Presentation Generator (get_x_master) ---');
-      gen_getx.main();
+      print('\n--- Presentation Generator (Riverpod) ---');
+      gen_page.main();
       break;
     } else if (input == '4') {
       print('\n--- Initial Setup Project Generator ---');

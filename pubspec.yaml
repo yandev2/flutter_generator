@@ -1,5 +1,5 @@
 name: flutter_generator
-description: "Flutter Generator Pro - Custom CLI tools untuk mempercepat development Flutter dengan Clean Architecture & get_x_master."
+description: "Flutter Generator Pro - Custom CLI tools untuk mempercepat development Flutter dengan Clean Architecture & Riverpod."
 version: 1.0.0
 homepage:
 
@@ -19,7 +19,7 @@ executables:
   flutter_generator: flutter_generator
   gen_model: generate
   gen_usecase: generate_usecase
-  gen_getx: generate_getx
+  gen_page: generate_page
 
 dev_dependencies:
   flutter_test:

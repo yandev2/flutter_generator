@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'builder/entity_builder.dart';
 import 'builder/model_builder.dart';
+import 'core/build_runner_reminder.dart';
 import 'core/string_extensions.dart';
 import 'parser/json_parser.dart';
 
@@ -70,9 +71,9 @@ class Generator {
 
       if (!_hasBuildRunner()) {
         print(
-          '⚠️ build_runner tidak ditemukan di pubspec.yaml. '
-          'Jalankan manual: dart run build_runner build --delete-conflicting-outputs',
+          '⚠️ build_runner tidak ditemukan di pubspec.yaml.',
         );
+        printBuildRunnerReminder();
         return;
       }
 
@@ -88,13 +89,13 @@ class Generator {
                 'run',
                 'build_runner',
                 'build',
-                '--delete-conflicting-outputs',
+                '-d',
               ]
             : [
                 'run',
                 'build_runner',
                 'build',
-                '--delete-conflicting-outputs',
+                '-d',
               ],
         runInShell: true,
         workingDirectory: currentDir,
@@ -107,6 +108,7 @@ class Generator {
             '❌ Build runner gagal dengan exit code ${result.exitCode}:');
         print(result.stderr);
         print(result.stdout);
+        printBuildRunnerReminder();
       }
     } catch (e) {
       print('❌ Error generating code: $e');

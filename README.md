@@ -4,7 +4,9 @@
 [![Flutter](https://img.shields.io/badge/Flutter-Compatible-02569B.svg)](https://flutter.dev)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**Flutter Generator Pro** adalah *Custom CLI Package* yang dirancang khusus untuk mempercepat proses *development* aplikasi Flutter yang menggunakan **Clean Architecture** dan **get_x_master**. Package ini mengotomatisasi pembuatan *boilerplate code* sehingga Anda bisa fokus pada logika bisnis utama.
+**Flutter Generator Pro** adalah *Custom CLI Package* yang dirancang khusus untuk mempercepat proses *development* aplikasi Flutter yang menggunakan **Clean Architecture** dan **Riverpod** (state management) + **go_router** (routing). Package ini mengotomatisasi pembuatan *boilerplate code* sehingga Anda bisa fokus pada logika bisnis utama.
+
+> 📘 Penjelasan lengkap arsitektur Riverpod (termasuk peta padanan dari GetX) ada di [documentation.md](documentation.md).
 
 ---
 
@@ -14,7 +16,7 @@
 - [Cara Penggunaan](#-cara-penggunaan)
 - [Generator 1: JSON to Entity & Model](#-1-json-to-entity--model-generator)
 - [Generator 2: Usecase Generator](#-2-usecase-generator)
-- [Generator 3: Presentation Generator (get_x_master)](#-3-presentation-generator-get_x_master)
+- [Generator 3: Presentation Generator (Riverpod)](#-3-presentation-generator-riverpod)
 - [Generator 4: Initial Setup Project](#-4-initial-setup-project-generator)
 - [Struktur Project](#-struktur-project)
 - [Catatan Penting](#-catatan-penting)
@@ -58,7 +60,7 @@ Menu interaktif akan muncul di terminal:
 Silakan pilih alat yang ingin dijalankan:
 1. JSON to Entity & Model Generator
 2. Usecase Generator
-3. Presentation Generator (get_x_master)
+3. Presentation Generator (Riverpod)
 4. Initial Setup Project Generator
 5. Keluar
 =====================================
@@ -70,7 +72,7 @@ Pilih angka sesuai generator yang ingin dijalankan. Anda juga dapat menjalankan 
 ```bash
 dart run flutter_generator:gen_model      # JSON to Entity & Model
 dart run flutter_generator:gen_usecase    # Usecase Generator
-dart run flutter_generator:gen_getx       # Presentation Generator (get_x_master)
+dart run flutter_generator:gen_page       # Presentation Generator (Riverpod)
 dart run flutter_generator:generate_init  # Initial Setup Project Generator
 ```
 
@@ -200,6 +202,33 @@ abstract class AuthRepository {
 ```
 === Flutter Usecase Generator ===
 Masukkan nama Repository (contoh: AuthRepository): AuthRepository
+✅ Generated: .../login_usecase.dart
+🎉 Generate Usecase Selesai!
+
+Inject usecase provider ke presentation layer (auto-wiring)? (y/n): y
+Masukkan nama Fitur (contoh: auth): auth
+Masukkan nama Page (contoh: login): login
+✅ Generated: .../presentation/auth/providers/auth_repository_provider.dart
+✅ Generated: .../presentation/auth/providers/login_usecase_provider.dart
+🔗 Linked: .../presentation/auth/providers/login_provider.dart → loginUsecaseProvider
+```
+
+> **Page name** harus sama dengan **nama method** di repository (`login` method → page `login`).
+
+### Auto-Wiring (opsional)
+
+Jika memilih `y`, generator membuat provider wiring di **presentation layer** (Domain/Data tetap pure Dart):
+
+```
+presentation/auth/providers/
+├── auth_repository_provider.dart   # ApiClient → AuthRepositoryImpl
+├── login_usecase_provider.dart     # AuthRepository → LoginUsecase
+└── login_provider.dart             # (jika sudah ada) di-link ke usecase
+```
+
+Chain lengkap:
+```text
+apiClientProvider → authRepositoryProvider → loginUsecaseProvider → loginProvider → LoginView
 ```
 
 ### Hasil Output
@@ -233,38 +262,40 @@ class LoginUsecase {
 - ✅ **Either Transformer** — Otomatis mengubah `Either<Failure, T>` menjadi `T` langsung
 - ✅ **Smart Import** — Hanya mengimpor tipe yang dipakai method tersebut, dengan path relative yang di-rewrite otomatis ke folder usecase
 - ✅ **1 Method = 1 File** — Setiap method di repository menghasilkan file Usecase terpisah
+- ✅ **Auto-Wiring (opsional)** — Inject provider Riverpod di presentation layer tanpa mengotori domain/data
 
 ---
 
-## 🌟 3. Presentation Generator (get_x_master)
+## 🌟 3. Presentation Generator (Riverpod)
 
-Membuat *scaffolding* untuk lapisan **Presentation** berbasis [get_x_master](https://pub.dev/packages/get_x_master) secara instan.
+Membuat *scaffolding* untuk lapisan **Presentation** berbasis [Riverpod](https://riverpod.dev) + [go_router](https://pub.dev/packages/go_router) secara instan. Setiap page menghasilkan **State**, **Notifier (provider)**, dan **View (`ConsumerWidget`)**.
 
 ### Cara Pakai
 
 ```
-=== Flutter Presentation Generator (get_x_master) ===
+=== Flutter Presentation Generator (Riverpod) ===
 Masukkan nama Fitur (contoh: auth): auth
 Masukkan nama Page/Layar (contoh: login): login
-✅ Generated: .../lib/presentation/auth/controllers/login_controller.dart
-✅ Generated: .../lib/presentation/auth/bindings/login_binding.dart
+✅ Generated: .../lib/presentation/auth/states/login_state.dart
+✅ Generated: .../lib/presentation/auth/providers/login_provider.dart
 ✅ Generated: .../lib/presentation/auth/views/login_view.dart
-Apakah Anda ingin meng-inject Route ini ke lib/service/route/? (y/n): y
-✅ Injected login ke RouteName.
-✅ Injected GetPage login ke AppRoute.
+Apakah Anda ingin meng-inject Route ini ke lib/core/router/? (y/n): y
+✅ Injected login ke RoutePaths.
+✅ Injected GoRoute login ke appRouter.
 🎉 Presentation Generator Selesai!
+ℹ️ Jalankan `dart run build_runner build -d` untuk men-generate file `.g.dart` & `.freezed.dart`.
 ```
 
 ### Hasil Output — Struktur Folder
 
 ```
 lib/presentation/auth/
-  ├── bindings/
-  │    └── login_binding.dart
-  ├── controllers/
-  │    └── login_controller.dart
+  ├── states/
+  │    └── login_state.dart      # state immutable (@freezed)
+  ├── providers/
+  │    └── login_provider.dart   # Notifier (@riverpod)
   └── views/
-       └── login_view.dart
+       └── login_view.dart       # ConsumerWidget
 ```
 
 ### Smart Merge — Menambah Page di Fitur yang Sama
@@ -273,12 +304,12 @@ Jika Anda menjalankan lagi dengan fitur `auth` tapi page `register`, file baru a
 
 ```
 lib/presentation/auth/
-  ├── bindings/
-  │    ├── login_binding.dart
-  │    └── register_binding.dart
-  ├── controllers/
-  │    ├── login_controller.dart
-  │    └── register_controller.dart
+  ├── states/
+  │    ├── login_state.dart
+  │    └── register_state.dart
+  ├── providers/
+  │    ├── login_provider.dart
+  │    └── register_provider.dart
   └── views/
        ├── login_view.dart
        └── register_view.dart
@@ -288,66 +319,102 @@ lib/presentation/auth/
 
 Jika Anda memilih `y` saat ditanya inject route, generator akan otomatis membuat/memodifikasi dua file:
 
-**`lib/service/route/route_name.dart`**:
+**`lib/core/router/route_paths.dart`**:
 ```dart
-abstract class RouteName {
+abstract class RoutePaths {
+  static const splash = '/';
   static const login = '/login';
   static const register = '/register';
 }
 ```
 
-**`lib/service/route/app_route.dart`**:
+**`lib/core/router/app_router.dart`**:
 ```dart
-import 'package:get_x_master/get_x_master.dart';
-import 'route_name.dart';
-import '../../presentation/auth/bindings/login_binding.dart';
-import '../../presentation/auth/views/login_view.dart';
-import '../../presentation/auth/bindings/register_binding.dart';
-import '../../presentation/auth/views/register_view.dart';
+import 'package:go_router/go_router.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-class AppRoute {
-  static final pages = [
-    GetPage(
-      name: RouteName.login,
-      page: () => const LoginView(),
-      binding: LoginBinding(),
-    ),
-    GetPage(
-      name: RouteName.register,
-      page: () => const RegisterView(),
-      binding: RegisterBinding(),
-    ),
-  ];
+import '../../presentation/auth/views/login_view.dart';
+import '../../presentation/auth/views/register_view.dart';
+import 'route_paths.dart';
+
+part 'app_router.g.dart';
+
+@Riverpod(keepAlive: true)
+GoRouter appRouter(Ref ref) {
+  return GoRouter(
+    initialLocation: RoutePaths.splash,
+    routes: [
+      GoRoute(
+        path: RoutePaths.login,
+        builder: (context, state) => const LoginView(),
+      ),
+      GoRoute(
+        path: RoutePaths.register,
+        builder: (context, state) => const RegisterView(),
+      ),
+    ],
+  );
 }
 ```
 
 **Contoh generated view (`login_view.dart`):**
 ```dart
-import 'package:get_x_master/get_x_master.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class LoginView extends ReactiveGetView<LoginController> {
-  // ...
+import '../providers/login_provider.dart';
+
+class LoginView extends ConsumerWidget {
+  const LoginView({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final state = ref.watch(loginProvider);
+    // final notifier = ref.read(loginProvider.notifier);
+    // ...
+  }
 }
 ```
 
-**Contoh generated binding (`login_binding.dart`):**
+**Contoh generated state (`login_state.dart`):**
 ```dart
-Get.smartLazyPut<LoginController>(() => LoginController());
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'login_state.freezed.dart';
+
+@freezed
+abstract class LoginState with _$LoginState {
+  const factory LoginState({
+    @Default(false) bool isLoading,
+    String? errorMessage,
+  }) = _LoginState;
+}
+```
+
+**Contoh generated provider (`login_provider.dart`):**
+```dart
+@riverpod
+class Login extends _$Login {
+  @override
+  LoginState build() => const LoginState();
+}
 ```
 
 Jika Anda memilih `n`, tidak ada modifikasi route yang dilakukan.
 
 ### Fitur Unggulan
-- ✅ **ReactiveGetView** — View reaktif otomatis tanpa wrapper `Obx()` manual
-- ✅ **smartLazyPut Binding** — Binding menggunakan `Get.smartLazyPut` untuk lifecycle DI yang lebih pintar
+- ✅ **ConsumerWidget** — View reaktif via `ref.watch`, tanpa `StatefulWidget` boilerplate
+- ✅ **State Terpisah** — State immutable berbasis **Freezed** dipisah dari Notifier agar mudah di-test
+- ✅ **Code-gen `@riverpod`** — DI otomatis, tanpa perlu file binding
 - ✅ **Smart Merge** — Tidak menimpa file/folder yang sudah ada
-- ✅ **Route Injector** — Otomatis menambahkan `RouteName` dan `GetPage` ke file routing
+- ✅ **Route Injector** — Otomatis menambahkan `RoutePaths` dan `GoRoute` ke go_router
 
 ---
 
 ## 🌟 4. Initial Setup Project Generator
 
-Membuat struktur folder dasar (Clean Architecture) dan *file boilerplate* penting untuk memulai project Flutter dengan get_x_master.
+Membuat struktur folder dasar (Clean Architecture) dan *file boilerplate* penting untuk memulai project Flutter dengan Riverpod + go_router.
 
 ### Cara Pakai
 
@@ -371,13 +438,18 @@ lib/
 │   ├── error/
 │   │   ├── exceptions.dart
 │   │   └── failures.dart
-│   ├── mixin/
-│   │   ├── lazy_tab_navigation_mixin.dart
-│   │   └── tab_loadable_mixin.dart
-│   ├── module/
+│   ├── navigation/
+│   │   ├── tab_navigation_state.dart
+│   │   └── tab_navigation_provider.dart
 │   ├── network/
-│   │   └── api_client.dart
-│   └── shared/
+│   │   ├── api_client.dart
+│   │   └── api_client_provider.dart
+│   ├── router/
+│   │   ├── app_router.dart
+│   │   └── route_paths.dart
+│   └── theme/
+│       ├── app_theme.dart
+│       └── theme_provider.dart
 ├── data/
 │   ├── model/
 │   ├── repository_impl/
@@ -388,40 +460,31 @@ lib/
 │   └── usecase/
 ├── presentation/
 │   ├── dashboard/
-│   │   ├── bindings/
-│   │   │   └── dashboard_binding.dart
-│   │   ├── controllers/
-│   │   │   └── dashboard_controller.dart
+│   │   ├── states/
+│   │   │   └── dashboard_state.dart
+│   │   ├── providers/
+│   │   │   └── dashboard_provider.dart
 │   │   └── views/
 │   │       └── dashboard_view.dart
-│   └── main/
-│       └── splash_screen/
-│           ├── bindings/
-│           │   └── splash_screen_binding.dart
-│           ├── controllers/
-│           │   └── splash_screen_controller.dart
-│           └── views/
-│               └── splash_screen_view.dart
-├── service/
+│   └── splash/
+│       ├── providers/
+│       │   └── splash_provider.dart
+│       └── views/
+│           └── splash_view.dart
+├── shared/
 │   ├── auth/
-│   │   └── auth_service.dart
-│   ├── dependency/
-│   │   └── dependency_injection.dart
-│   ├── route/
-│   │   ├── app_route.dart
-│   │   └── route_name.dart
-│   └── theme/
-│       ├── theme.dart
-│       └── theme_manager.dart
+│   │   └── auth_provider.dart
+│   └── providers/
+│       └── shared_preferences_provider.dart
 └── main.dart
 ```
 
 ### Fitur Unggulan
 - ✅ **Struktur Bersih & Modular** — Menyiapkan hierarki untuk Data, Domain, Presentation, dan Core.
-- ✅ **Setup Lengkap `main.dart`** — Terintegrasi dengan `GetMaterialApp`, `ScreenUtilInit`, tema (*dark/light*), *routing*, pengaturan zona waktu, dan *scale text* yang dinamis.
+- ✅ **Setup Lengkap `main.dart`** — Terintegrasi dengan `ProviderScope`, `MaterialApp.router` (go_router), `ScreenUtilInit`, tema (*dark/light*), dan inisialisasi zona waktu.
 - ✅ **Network via Dio** — `api_client.dart` menggunakan package `Dio` untuk pengelolaan otorisasi token, *error interceptor*, *safe request*, serta *file uploads*.
 - ✅ **Error Handling Kuat** — `failures.dart` diimplementasikan dengan `Freezed` (*union class*) dan `exceptions.dart` untuk standardisasi manajemen *error*.
-- ✅ **get_x_master Mixins & UI Standar** — Fitur *lazy tab navigation mixin* disiapkan beserta *scaffolding* untuk `SplashScreen` dan `Dashboard` lengkap dengan Controller, Binding, dan `ReactiveGetView`.
+- ✅ **Riverpod + go_router Siap Pakai** — Provider global (`auth`, `apiClient`, `sharedPreferences`, `theme`), `tab_navigation_provider` untuk lazy tab, serta *scaffolding* `SplashView` & `DashboardView` berbasis `ConsumerWidget`.
 
 ---
 
@@ -433,7 +496,7 @@ flutter_generator/
 │   ├── flutter_generator.dart     # Menu utama (entry point)
 │   ├── generate.dart              # CLI JSON to Entity & Model
 │   ├── generate_usecase.dart      # CLI Usecase Generator
-│   ├── generate_getx.dart         # CLI Presentation Generator (get_x_master)
+│   ├── generate_page.dart         # CLI Presentation Generator (Riverpod)
 │   └── generate_init.dart         # CLI Initial Setup Project Generator
 ├── lib/
 │   ├── flutter_generator.dart     # Barrel export
@@ -442,7 +505,7 @@ flutter_generator/
 │       │   ├── entity_builder.dart
 │       │   ├── model_builder.dart
 │       │   ├── usecase_builder.dart
-│       │   ├── getx_presentation_builder.dart
+│       │   ├── riverpod_presentation_builder.dart
 │       │   └── init_builder.dart
 │       ├── core/
 │       │   ├── models.dart
@@ -474,7 +537,18 @@ flutter_generator/
      json_serializable: ^6.14.0
    ```
    Lalu jalankan `dart run build_runner build --delete-conflicting-outputs`.
-3. **get_x_master** — Untuk Presentation Generator dan Initial Setup, pastikan `get_x_master: ^0.0.35` sudah terdaftar sebagai dependency di project tujuan (ganti package `get` jika sebelumnya memakai GetX).
+3. **Riverpod + go_router** — Untuk Presentation Generator dan Initial Setup, pastikan dependency berikut sudah terdaftar di project tujuan:
+   ```yaml
+   dependencies:
+     flutter_riverpod: ^3.3.2
+     riverpod_annotation: ^4.0.3
+     go_router: ^17.3.0
+   dev_dependencies:
+     riverpod_generator: ^4.0.4
+     riverpod_lint: ^3.1.4
+     flutter_lints: ^6.0.0
+   ```
+   Setelah generate, jalankan `dart run build_runner build -d` untuk membuat file `*.g.dart`. `analysis_options.yaml` (dari `gen_init`) sudah memuat plugin `riverpod_lint`. Penjelasan arsitektur lengkap ada di [documentation.md](documentation.md).
 4. **Either/fpdart** — Untuk Usecase Generator, pastikan Anda sudah menggunakan package `fpdart` atau `dartz` di repository.
 
 ---

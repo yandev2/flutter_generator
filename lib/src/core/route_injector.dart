@@ -2,57 +2,71 @@
 import 'dart:io';
 import 'string_extensions.dart';
 
+/// Meng-inject route baru ke setup **go_router** (Riverpod).
+///
+/// Mengelola dua file di dalam [routeDir] (mis. `lib/core/router`):
+/// - `route_paths.dart` → konstanta path (`RoutePaths`)
+/// - `app_router.dart`  → daftar `GoRoute` di dalam provider `appRouter`
 class RouteInjector {
   final String routeDir;
 
   RouteInjector(this.routeDir);
 
   void inject(String featureName, String pageName) {
-    final routeNameFile = File('$routeDir/route_name.dart');
-    final appRouteFile = File('$routeDir/app_route.dart');
+    final routePathsFile = File('$routeDir/route_paths.dart');
+    final appRouterFile = File('$routeDir/app_router.dart');
 
-    _ensureRouteNameFileExists(routeNameFile);
-    _ensureAppRouteFileExists(appRouteFile);
+    _ensureRoutePathsFileExists(routePathsFile);
+    _ensureAppRouterFileExists(appRouterFile);
 
-    _injectRouteName(routeNameFile, pageName);
-    _injectAppRoute(appRouteFile, featureName, pageName);
+    _injectRoutePath(routePathsFile, pageName);
+    _injectGoRoute(appRouterFile, featureName, pageName);
   }
 
-  void _ensureRouteNameFileExists(File file) {
+  void _ensureRoutePathsFileExists(File file) {
     if (!file.existsSync()) {
       file.createSync(recursive: true);
       file.writeAsStringSync('''
-abstract class RouteName {
+abstract class RoutePaths {
+  static const splash = '/';
 }
 ''');
-      print('ℹ️ Dibuat file route_name.dart baru.');
+      print('ℹ️ Dibuat file route_paths.dart baru.');
     }
   }
 
-  void _ensureAppRouteFileExists(File file) {
+  void _ensureAppRouterFileExists(File file) {
     if (!file.existsSync()) {
       file.createSync(recursive: true);
       file.writeAsStringSync('''
-import 'package:get_x_master/get_x_master.dart';
-import 'route_name.dart';
+import 'package:go_router/go_router.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-class AppRoute {
-  static final pages = [
-  ];
+import 'route_paths.dart';
+
+part 'app_router.g.dart';
+
+@Riverpod(keepAlive: true)
+GoRouter appRouter(Ref ref) {
+  return GoRouter(
+    initialLocation: RoutePaths.splash,
+    routes: [
+    ],
+  );
 }
 ''');
-      print('ℹ️ Dibuat file app_route.dart baru.');
+      print('ℹ️ Dibuat file app_router.dart baru.');
     }
   }
 
-  void _injectRouteName(File file, String pageName) {
+  void _injectRoutePath(File file, String pageName) {
     final content = file.readAsStringSync();
     final camelPageName = pageName.toCamelCase();
     final routeString =
         "  static const $camelPageName = '/${pageName.toSnakeCase()}';";
 
-    if (_routeNameExists(content, camelPageName)) {
-      print('⚠️ RouteName $camelPageName sudah ada. Skip inject.');
+    if (_routePathExists(content, camelPageName)) {
+      print('⚠️ RoutePaths $camelPageName sudah ada. Skip inject.');
       return;
     }
 
@@ -61,58 +75,51 @@ class AppRoute {
       final newContent =
           '${content.substring(0, lastBraceIndex)}$routeString\n${content.substring(lastBraceIndex)}';
       file.writeAsStringSync(newContent);
-      print('✅ Injected $camelPageName ke RouteName.');
+      print('✅ Injected $camelPageName ke RoutePaths.');
     }
   }
 
-  void _injectAppRoute(File file, String featureName, String pageName) {
+  void _injectGoRoute(File file, String featureName, String pageName) {
     var content = file.readAsStringSync();
     final camelPageName = pageName.toCamelCase();
     final viewName = '${pageName.toPascalCase()}View';
-    final bindingName = '${pageName.toPascalCase()}Binding';
 
-    if (_routePageExists(content, camelPageName)) {
-      print('⚠️ AppRoute untuk $camelPageName sudah ada. Skip inject.');
+    if (_goRouteExists(content, camelPageName)) {
+      print('⚠️ GoRoute untuk $camelPageName sudah ada. Skip inject.');
       return;
     }
 
     final featureDir = featureName.toSnakeCase();
     final pageSnake = pageName.toSnakeCase();
 
-    final bindingImport =
-        "import '../../presentation/$featureDir/bindings/${pageSnake}_binding.dart';";
     final viewImport =
         "import '../../presentation/$featureDir/views/${pageSnake}_view.dart';";
 
-    content = _appendImportsIfMissing(
-      content,
-      [bindingImport, viewImport],
-    );
+    content = _appendImportsIfMissing(content, [viewImport]);
 
-    final getPageString = '''
-    GetPage(
-      name: RouteName.$camelPageName,
-      page: () => const $viewName(),
-      binding: $bindingName(),
-    ),''';
+    final goRouteString = '''
+      GoRoute(
+        path: RoutePaths.$camelPageName,
+        builder: (context, state) => const $viewName(),
+      ),''';
 
-    final closingBracketIndex = _findPagesListClosingIndex(content);
+    final closingBracketIndex = _findRoutesListClosingIndex(content);
     if (closingBracketIndex != -1) {
       content =
-          '${content.substring(0, closingBracketIndex)}$getPageString\n  ${content.substring(closingBracketIndex)}';
+          '${content.substring(0, closingBracketIndex)}$goRouteString\n    ${content.substring(closingBracketIndex)}';
       file.writeAsStringSync(content);
-      print('✅ Injected GetPage $camelPageName ke AppRoute.');
+      print('✅ Injected GoRoute $camelPageName ke appRouter.');
     } else {
-      print('❌ Gagal mencari "];" di AppRoute. Silakan inject manual.');
+      print('❌ Gagal mencari "routes: [" di app_router.dart. Inject manual.');
     }
   }
 
-  static bool _routeNameExists(String content, String camelPageName) {
+  static bool _routePathExists(String content, String camelPageName) {
     return RegExp('static\\s+const\\s+$camelPageName\\b').hasMatch(content);
   }
 
-  static bool _routePageExists(String content, String camelPageName) {
-    return content.contains('RouteName.$camelPageName');
+  static bool _goRouteExists(String content, String camelPageName) {
+    return content.contains('RoutePaths.$camelPageName');
   }
 
   static String _appendImportsIfMissing(
@@ -152,9 +159,9 @@ class AppRoute {
     return '$importLine\n$content';
   }
 
-  static int _findPagesListClosingIndex(String content) {
-    final pagesKeyword = RegExp(r'static\s+final\s+pages\s*=\s*\[');
-    final match = pagesKeyword.firstMatch(content);
+  static int _findRoutesListClosingIndex(String content) {
+    final routesKeyword = RegExp(r'routes\s*:\s*\[');
+    final match = routesKeyword.firstMatch(content);
     if (match == null) {
       return content.lastIndexOf('];');
     }
@@ -168,16 +175,12 @@ class AppRoute {
       } else if (char == ']') {
         depth--;
         if (depth == 0) {
-          final semicolonIndex = index + 1;
-          if (semicolonIndex < content.length && content[semicolonIndex] == ';') {
-            return semicolonIndex + 1;
-          }
           return index;
         }
       }
       index++;
     }
 
-    return content.lastIndexOf('];');
+    return content.lastIndexOf(']');
   }
 }

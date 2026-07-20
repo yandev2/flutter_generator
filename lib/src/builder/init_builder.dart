@@ -1,6 +1,8 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
 
+import '../core/build_runner_reminder.dart';
+
 class InitBuilder {
   static void build() {
     print('🚀 Memulai inisialisasi struktur project...');
@@ -8,26 +10,23 @@ class InitBuilder {
     final directories = [
       'lib/core/const',
       'lib/core/error',
-      'lib/core/mixin',
-      'lib/core/module',
+      'lib/core/navigation',
       'lib/core/network',
-      'lib/core/shared',
+      'lib/core/router',
+      'lib/core/theme',
       'lib/data/model',
       'lib/data/repository_impl',
       'lib/data/source',
       'lib/domain/entity',
       'lib/domain/repository',
       'lib/domain/usecase',
-      'lib/presentation/main/splash_screen/bindings',
-      'lib/presentation/main/splash_screen/controllers',
-      'lib/presentation/main/splash_screen/views',
-      'lib/presentation/dashboard/bindings',
-      'lib/presentation/dashboard/controllers',
+      'lib/presentation/splash/providers',
+      'lib/presentation/splash/views',
+      'lib/presentation/dashboard/providers',
+      'lib/presentation/dashboard/states',
       'lib/presentation/dashboard/views',
-      'lib/service/auth',
-      'lib/service/dependency',
-      'lib/service/route',
-      'lib/service/theme',
+      'lib/shared/auth',
+      'lib/shared/providers',
     ];
 
     for (var dir in directories) {
@@ -39,52 +38,58 @@ class InitBuilder {
     _createFile('lib/core/error/failures.dart', _failureTemplate);
     _createFile('lib/core/error/exceptions.dart', _exceptionTemplate);
     _createFile(
-      'lib/core/mixin/lazy_tab_navigation_mixin.dart',
-      _lazyTabNavigationTemplate,
+      'lib/core/navigation/tab_navigation_state.dart',
+      _tabNavigationStateTemplate,
     );
-    _createFile('lib/core/mixin/tab_loadable_mixin.dart', _tabLoadableTemplate);
-    _createFile('lib/core/network/api_client.dart', _apiClientTemplate);
-    _createFile('lib/service/auth/auth_service.dart', _authServiceTemplate);
     _createFile(
-      'lib/service/dependency/dependency_injection.dart',
-      _diTemplate,
+      'lib/core/navigation/tab_navigation_provider.dart',
+      _tabNavigationProviderTemplate,
     );
-    _createFile('lib/service/route/app_route.dart', _appRouteTemplate);
-    _createFile('lib/service/route/route_name.dart', _routeNameTemplate);
-    _createFile('lib/service/theme/theme.dart', _themeTemplate);
-    _createFile('lib/service/theme/theme_manager.dart', _themeManagerTemplate);
+    _createFile('lib/core/network/api_client.dart', _apiClientTemplate);
+    _createFile(
+      'lib/core/network/api_client_provider.dart',
+      _apiClientProviderTemplate,
+    );
+    _createFile('lib/core/router/route_paths.dart', _routePathsTemplate);
+    _createFile('lib/core/router/app_router.dart', _appRouterTemplate);
+    _createFile('lib/core/theme/app_theme.dart', _themeTemplate);
+    _createFile('lib/core/theme/theme_provider.dart', _themeProviderTemplate);
+    _createFile('lib/shared/auth/auth_provider.dart', _authProviderTemplate);
+    _createFile(
+      'lib/shared/providers/shared_preferences_provider.dart',
+      _sharedPreferencesProviderTemplate,
+    );
     _createFile('lib/main.dart', _mainTemplate);
     _createFile(
-      'lib/presentation/main/splash_screen/bindings/splash_screen_binding.dart',
-      _splashBindingTemplate,
+      'lib/presentation/splash/providers/splash_provider.dart',
+      _splashProviderTemplate,
     );
     _createFile(
-      'lib/presentation/main/splash_screen/controllers/splash_screen_controller.dart',
-      _splashControllerTemplate,
-    );
-    _createFile(
-      'lib/presentation/main/splash_screen/views/splash_screen_view.dart',
+      'lib/presentation/splash/views/splash_view.dart',
       _splashViewTemplate,
     );
     _createFile(
-      'lib/presentation/dashboard/bindings/dashboard_binding.dart',
-      _dashboardBindingTemplate,
+      'lib/presentation/dashboard/states/dashboard_state.dart',
+      _dashboardStateTemplate,
     );
     _createFile(
-      'lib/presentation/dashboard/controllers/dashboard_controller.dart',
-      _dashboardControllerTemplate,
+      'lib/presentation/dashboard/providers/dashboard_provider.dart',
+      _dashboardProviderTemplate,
     );
     _createFile(
       'lib/presentation/dashboard/views/dashboard_view.dart',
       _dashboardViewTemplate,
     );
+    _createFile('analysis_options.yaml', _analysisOptionsTemplate);
 
     print('🎉 Inisialisasi struktur project selesai!\n');
     print(
       '📦 Pastikan Anda telah menambahkan package berikut di pubspec.yaml:',
     );
     print('dependencies:');
-    print('  - get_x_master: ^0.0.35');
+    print('  - flutter_riverpod: ^3.3.2');
+    print('  - riverpod_annotation: ^4.0.3');
+    print('  - go_router: ^17.3.0');
     print('  - dio');
     print('  - freezed_annotation: ^3.1.0');
     print('  - json_annotation: ^4.12.0');
@@ -92,12 +97,19 @@ class InitBuilder {
     print('  - intl');
     print('  - flutter_screenutil');
     print('\ndev_dependencies:');
-    print('  - freezed: ^3.2.6-dev.1');
+    print('  - flutter_lints: ^6.0.0');
     print('  - build_runner: ^2.15.1');
+    print('  - riverpod_generator: ^4.0.4');
+    print('  - riverpod_lint: ^3.1.4');
+    print('  - freezed: ^3.2.6-dev.1');
     print('  - json_serializable: ^6.14.0');
     print(
-      'Silakan jalankan `flutter pub get` lalu `dart run build_runner build -d` untuk men-generate file freezed.',
+      'Silakan jalankan `flutter pub get` terlebih dahulu.',
     );
+    print(
+      'ℹ️ analysis_options.yaml sudah dikonfigurasi dengan plugin riverpod_lint.',
+    );
+    printBuildRunnerReminder();
   }
 
   static void _createFile(String path, String content) {
@@ -109,6 +121,16 @@ class InitBuilder {
       print('⚠️ Skipped file: $path (Already exists)');
     }
   }
+
+  static const String _analysisOptionsTemplate = '''
+include: package:flutter_lints/flutter.yaml
+
+# Riverpod lint & refactor rules (analysis_server_plugin).
+# Requires dev_dependencies: flutter_lints, riverpod_lint
+# Docs: https://riverpod.dev/docs/introduction/getting_started
+plugins:
+  riverpod_lint: ^3.1.4
+''';
 
   static const String _failureTemplate = '''
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -227,63 +249,44 @@ class ValidationException implements Exception {
 }
 ''';
 
-  static const String _lazyTabNavigationTemplate = '''
-import 'package:flutter/scheduler.dart';
-import 'package:get_x_master/get_x_master.dart';
+  static const String _tabNavigationStateTemplate = '''
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-mixin LazyTabNavigation on GetxController {
-  int get tabCount;
+part 'tab_navigation_state.freezed.dart';
 
-  final currentIndex = 0.obs;
-  final RxList<int> visitedTabIndices = <int>[0].obs;
+/// State untuk navigasi tab dengan [IndexedStack].
+/// [visitedIndices] dipakai untuk lazy-load: tab hanya di-build/di-fetch
+/// saat pertama kali dikunjungi.
+@freezed
+abstract class TabNavigationState with _\$TabNavigationState {
+  const TabNavigationState._();
 
-  bool isTabVisited(int index) => visitedTabIndices.contains(index);
+  const factory TabNavigationState({
+    @Default(0) int currentIndex,
+    @Default(<int>{0}) Set<int> visitedIndices,
+  }) = _TabNavigationState;
 
-  @override
-  void onReady() {
-    super.onReady();
-    ensureTabLoaded(0);
-  }
-
-  void changeTab(int index, {bool refresh = false}) {
-    if (index < 0 || index >= tabCount) return;
-    _markVisited(index);
-    currentIndex.value = index;
-    ensureTabLoaded(index, refresh: refresh);
-  }
-
-  void changePage(int index, {bool refresh = false}) => changeTab(index, refresh: refresh);
-
-  void _markVisited(int index) {
-    if (!visitedTabIndices.contains(index)) {
-      visitedTabIndices.add(index);
-    }
-  }
-
-  void ensureTabLoaded(int index, {bool refresh = false}) {
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      loadTabController(index, refresh: refresh);
-    });
-  }
-
-  Future<void> loadTabController(int index, {bool refresh = false});
+  bool isVisited(int index) => visitedIndices.contains(index);
 }
 ''';
 
-  static const String _tabLoadableTemplate = '''
-import 'package:get_x_master/get_x_master.dart';
+  static const String _tabNavigationProviderTemplate = '''
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-/// Mixin untuk tab controller di [IndexedStack] navigation.
-/// Data hanya di-fetch saat tab pertama kali aktif atau saat [refresh] diminta.
-mixin TabLoadable on GetxController {
-  bool _hasLoaded = false;
+import 'tab_navigation_state.dart';
 
-  Future<void> loadTabData();
+part 'tab_navigation_provider.g.dart';
 
-  Future<void> loadIfNeeded({bool refresh = false}) async {
-    if (_hasLoaded && !refresh) return;
-    await loadTabData();
-    _hasLoaded = true;
+@riverpod
+class TabNavigation extends _\$TabNavigation {
+  @override
+  TabNavigationState build() => const TabNavigationState();
+
+  void changeTab(int index) {
+    state = state.copyWith(
+      currentIndex: index,
+      visitedIndices: {...state.visitedIndices, index},
+    );
   }
 }
 ''';
@@ -528,84 +531,94 @@ class ApiClient {
 }
 ''';
 
-  static const String _authServiceTemplate = '''
-import 'package:get_x_master/get_x_master.dart';
-import '../route/route_name.dart';
+  static const String _authProviderTemplate = '''
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-class AuthService extends GetxService {
-  final isLoggedIn = false.obs;
+part 'auth_provider.g.dart';
 
+/// State autentikasi global. `keepAlive: true` menjaga provider tetap hidup
+/// selama aplikasi berjalan (setara `Get.put(..., permanent: true)`).
+@Riverpod(keepAlive: true)
+class Auth extends _\$Auth {
   @override
-  void onReady() {
-    super.onReady();
-    _initializeApp();
-  }
-
-  Future<void> _initializeApp() async {
-    await Future.delayed(const Duration(seconds: 2));
-    // Check token from SharedPreferences or other storage here
-    if (isLoggedIn.isTrue) {
-      Get.offAllNamed(RouteName.dashboard);
-    } else {
-      Get.offAllNamed(RouteName.login);
-    }
-  }
+  bool build() => false; // isLoggedIn
 
   Future<void> login() async {
-    // Implement login logic here
-    isLoggedIn.value = true;
-    Get.offAllNamed(RouteName.dashboard);
+    // TODO: Implement login logic (panggil usecase via ref.read(...))
+    state = true;
   }
 
   Future<void> logout() async {
-    // Implement logout logic here
-    isLoggedIn.value = false;
-    Get.offAllNamed(RouteName.login);
+    // TODO: Implement logout logic
+    state = false;
   }
 }
 ''';
 
-  static const String _diTemplate = '''
-import 'package:get_x_master/get_x_master.dart';
-import '../../core/network/api_client.dart';
-import '../auth/auth_service.dart';
+  static const String _apiClientProviderTemplate = '''
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-class InitialBinding implements Bindings {
-  @override
-  void dependencies() {
-    Get.smartLazyPut<ApiClient>(() => ApiClient(), fenix: true);
-    Get.put(AuthService(), permanent: true);
-  }
+import 'api_client.dart';
+
+part 'api_client_provider.g.dart';
+
+/// Provider global untuk [ApiClient] (setara `Get.put(ApiClient(), permanent: true)`).
+@Riverpod(keepAlive: true)
+ApiClient apiClient(Ref ref) {
+  return ApiClient();
 }
 ''';
 
-  static const String _appRouteTemplate = '''
-import 'package:get_x_master/get_x_master.dart';
-import 'route_name.dart';
-import '../../presentation/main/splash_screen/bindings/splash_screen_binding.dart';
-import '../../presentation/main/splash_screen/views/splash_screen_view.dart';
-import '../../presentation/dashboard/bindings/dashboard_binding.dart';
+  static const String _sharedPreferencesProviderTemplate = '''
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+part 'shared_preferences_provider.g.dart';
+
+/// Placeholder provider untuk [SharedPreferences].
+///
+/// Wajib di-override di `main()` menggunakan `overrideWithValue(prefs)`
+/// karena SharedPreferences hanya bisa diambil secara async.
+@Riverpod(keepAlive: true)
+SharedPreferences sharedPreferences(Ref ref) {
+  throw UnimplementedError(
+    'sharedPreferencesProvider harus di-override di main() '
+    'dengan overrideWithValue(prefs).',
+  );
+}
+''';
+
+  static const String _appRouterTemplate = '''
+import 'package:go_router/go_router.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+import '../../presentation/splash/views/splash_view.dart';
 import '../../presentation/dashboard/views/dashboard_view.dart';
+import 'route_paths.dart';
 
-class AppRoute {
-  static final pages = [
-    GetPage(
-      name: RouteName.splashScreen,
-      page: () => const SplashScreenView(),
-      binding: SplashScreenBinding(),
-    ),
-    GetPage(
-      name: RouteName.dashboard,
-      page: () => const DashboardView(),
-      binding: DashboardBinding(),
-    ),
-  ];
+part 'app_router.g.dart';
+
+@Riverpod(keepAlive: true)
+GoRouter appRouter(Ref ref) {
+  return GoRouter(
+    initialLocation: RoutePaths.splash,
+    routes: [
+      GoRoute(
+        path: RoutePaths.splash,
+        builder: (context, state) => const SplashView(),
+      ),
+      GoRoute(
+        path: RoutePaths.dashboard,
+        builder: (context, state) => const DashboardView(),
+      ),
+    ],
+  );
 }
 ''';
 
-  static const String _routeNameTemplate = '''
-abstract class RouteName {
-  static const splashScreen = '/splash_screen';
+  static const String _routePathsTemplate = '''
+abstract class RoutePaths {
+  static const splash = '/';
   static const login = '/login';
   static const dashboard = '/dashboard';
 }
@@ -639,119 +652,118 @@ final ThemeData darkTheme = ThemeData(
 );
 ''';
 
-  static const String _themeManagerTemplate = '''
+  static const String _themeProviderTemplate = '''
 import 'package:flutter/material.dart';
-import 'package:get_x_master/get_x_master.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-class ThemeManager extends GetxController {
-  final isDarkMode = false.obs;
+part 'theme_provider.g.dart';
 
-  void toggleTheme() {
-    isDarkMode.value = !isDarkMode.value;
-    Get.changeThemeMode(isDarkMode.value ? ThemeMode.dark : ThemeMode.light);
+/// Mengelola [ThemeMode] aplikasi. Baca di `MaterialApp.router`
+/// dengan `ref.watch(appThemeModeProvider)`.
+@Riverpod(keepAlive: true)
+class AppThemeMode extends _\$AppThemeMode {
+  @override
+  ThemeMode build() => ThemeMode.system;
+
+  void toggle() {
+    state = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
   }
+
+  void setMode(ThemeMode mode) => state = mode;
 }
 ''';
 
   static const String _mainTemplate = '''
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get_x_master/get_x_master.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ui_component_flutter/theme/app_scale.dart';
-import 'service/dependency/dependency_injection.dart';
-import 'service/route/app_route.dart';
-import 'service/route/route_name.dart';
-import 'service/theme/theme.dart';
-import 'service/theme/theme_manager.dart';
 
-void main() async {
+import 'core/router/app_router.dart';
+import 'core/theme/app_theme.dart';
+import 'core/theme/theme_provider.dart';
+import 'shared/providers/shared_preferences_provider.dart';
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
   final prefs = await SharedPreferences.getInstance();
-  Get.put(ThemeManager(), permanent: true);
-  Get.put(prefs, permanent: true);
-  runApp(const MyApp());
+
+  runApp(
+    ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
+    final themeMode = ref.watch(appThemeModeProvider);
+
     return ScreenUtilInit(
-      designSize: Size(360, 690),
+      designSize: const Size(360, 690),
       minTextAdapt: true,
       splitScreenMode: true,
-      builder: (context, _) => Obx(
-        () => GetMaterialApp(
-          title: 'My App',
-          debugShowCheckedModeBanner: false,
-          theme: lightTheme,
-          darkTheme: darkTheme,
-          themeMode: Get.find<ThemeManager>().isDarkMode.isTrue
-              ? ThemeMode.dark
-              : ThemeMode.light,
-          initialRoute: RouteName.splashScreen,
-          initialBinding: InitialBinding(),
-          getPages: AppRoute.pages,
-          builder: (context, extendedChild) {
-            return MediaQuery(
-              data: MediaQuery.of(
-                context,
-              ).copyWith(textScaler: TextScaler.linear(scale())),
-              child: extendedChild!,
-            );
-          },
-        ),
+      builder: (context, child) => MaterialApp.router(
+        title: 'My App',
+        debugShowCheckedModeBanner: false,
+        theme: lightTheme,
+        darkTheme: darkTheme,
+        themeMode: themeMode,
+        routerConfig: router,
       ),
     );
   }
 }
 ''';
 
-  static const String _splashBindingTemplate = '''
-import 'package:get_x_master/get_x_master.dart';
-import '../controllers/splash_screen_controller.dart';
+  static const String _splashProviderTemplate = '''
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-class SplashScreenBinding extends Bindings {
-  @override
-  void dependencies() {
-    Get.smartLazyPut<SplashScreenController>(
-      () => SplashScreenController(),
-    );
-  }
-}
-''';
+part 'splash_provider.g.dart';
 
-  static const String _splashControllerTemplate = '''
-import 'package:get_x_master/get_x_master.dart';
-import '../../../../service/route/route_name.dart';
-
-class SplashScreenController extends GetxController {
-  @override
-  void onReady() {
-    super.onReady();
-    Future.delayed(const Duration(seconds: 3), () {
-      Get.offAllNamed(RouteName.dashboard);
-    });
-  }
+/// Async provider yang menyelesaikan proses inisialisasi splash
+/// (mis. cek token, load config). View me-`listen` provider ini lalu
+/// melakukan navigasi saat selesai.
+@riverpod
+Future<void> splashInit(Ref ref) async {
+  // TODO: Inisialisasi awal aplikasi (cek auth, dsb).
+  await Future.delayed(const Duration(seconds: 3));
 }
 ''';
 
   static const String _splashViewTemplate = '''
 import 'package:flutter/material.dart';
-import 'package:get_x_master/get_x_master.dart';
-import '../controllers/splash_screen_controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-class SplashScreenView extends ReactiveGetView<SplashScreenController> {
-  const SplashScreenView({super.key});
+import '../../../core/router/route_paths.dart';
+import '../providers/splash_provider.dart';
+
+class SplashView extends ConsumerWidget {
+  const SplashView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
+    ref.listen(splashInitProvider, (previous, next) {
+      next.whenOrNull(
+        data: (_) => context.go(RoutePaths.dashboard),
+      );
+    });
+
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
+      body: const Center(
         child: FlutterLogo(size: 100),
       ),
     );
@@ -759,40 +771,50 @@ class SplashScreenView extends ReactiveGetView<SplashScreenController> {
 }
 ''';
 
-  static const String _dashboardBindingTemplate = '''
-import 'package:get_x_master/get_x_master.dart';
-import '../controllers/dashboard_controller.dart';
+  static const String _dashboardStateTemplate = '''
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-class DashboardBinding extends Bindings {
-  @override
-  void dependencies() {
-    Get.smartLazyPut<DashboardController>(
-      () => DashboardController(),
-    );
-  }
+part 'dashboard_state.freezed.dart';
+
+@freezed
+abstract class DashboardState with _\$DashboardState {
+  const factory DashboardState({
+    @Default(0) int count,
+  }) = _DashboardState;
 }
 ''';
 
-  static const String _dashboardControllerTemplate = '''
-import 'package:get_x_master/get_x_master.dart';
+  static const String _dashboardProviderTemplate = '''
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-class DashboardController extends GetxController {
-  final count = 0.obs;
+import '../states/dashboard_state.dart';
 
-  void increment() => count.value++;
+part 'dashboard_provider.g.dart';
+
+@riverpod
+class Dashboard extends _\$Dashboard {
+  @override
+  DashboardState build() => const DashboardState();
+
+  void increment() => state = state.copyWith(count: state.count + 1);
 }
 ''';
 
   static const String _dashboardViewTemplate = '''
 import 'package:flutter/material.dart';
-import 'package:get_x_master/get_x_master.dart';
-import '../controllers/dashboard_controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class DashboardView extends ReactiveGetView<DashboardController> {
+import '../providers/dashboard_provider.dart';
+
+class DashboardView extends ConsumerWidget {
   const DashboardView({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final state = ref.watch(dashboardProvider);
+    final notifier = ref.read(dashboardProvider.notifier);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
@@ -800,12 +822,12 @@ class DashboardView extends ReactiveGetView<DashboardController> {
       ),
       body: Center(
         child: Text(
-          'Count: \${controller.count}',
-          style: const TextStyle(fontSize: 24),
+          'Count: \${state.count}',
+          style: theme.textTheme.headlineMedium,
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: controller.increment,
+        onPressed: notifier.increment,
         child: const Icon(Icons.add),
       ),
     );

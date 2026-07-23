@@ -26,7 +26,7 @@ class PubspecConfigurator {
         return false;
       }
 
-      final root = _cloneMap(doc);
+      final root = _toPlainMap(doc);
       _mergeEnvironment(root);
       _mergeDependencySection(
         root,
@@ -41,7 +41,7 @@ class PubspecConfigurator {
       _mergeFlutterAssets(root);
 
       pubspecFile.writeAsStringSync(_emitYaml(root));
-      print('✅ Updated pubspec.yaml (dependencies + assets)');
+      print('✅ Updated pubspec.yaml (dependencies + assets + environment)');
       return true;
     } catch (e) {
       print('⚠️ Gagal update pubspec.yaml: $e');
@@ -49,14 +49,14 @@ class PubspecConfigurator {
     }
   }
 
-  void _mergeEnvironment(YamlMap root) {
+  void _mergeEnvironment(Map<String, dynamic> root) {
     final environment = _ensureMap(root, 'environment');
     environment.putIfAbsent('sdk', () => '^3.8.0');
     environment.putIfAbsent('flutter', () => '>=3.32.0');
   }
 
   void _mergeDependencySection(
-    YamlMap root,
+    Map<String, dynamic> root,
     String section,
     Map<String, String> packages,
   ) {
@@ -66,14 +66,14 @@ class PubspecConfigurator {
     }
   }
 
-  void _mergeFlutterAssets(YamlMap root) {
+  void _mergeFlutterAssets(Map<String, dynamic> root) {
     final flutter = _ensureMap(root, 'flutter');
     flutter.putIfAbsent('uses-material-design', () => true);
 
     final assetsNode = flutter['assets'];
     final assets = <String>[];
 
-    if (assetsNode is YamlList) {
+    if (assetsNode is List) {
       for (final item in assetsNode) {
         if (item is String) {
           assets.add(item);
@@ -87,62 +87,58 @@ class PubspecConfigurator {
       }
     }
 
-    flutter['assets'] = YamlList.wrap(assets);
+    flutter['assets'] = assets;
   }
 
-  YamlMap _ensureMap(YamlMap root, String key) {
+  Map<String, dynamic> _ensureMap(Map<String, dynamic> root, String key) {
     final value = root[key];
-    if (value is YamlMap) {
+    if (value is Map<String, dynamic>) {
       return value;
     }
 
-    final map = YamlMap();
+    final map = <String, dynamic>{};
     root[key] = map;
     return map;
   }
 
-  YamlMap _cloneMap(YamlMap source) {
-    final clone = YamlMap();
+  Map<String, dynamic> _toPlainMap(YamlMap source) {
+    final map = <String, dynamic>{};
     for (final entry in source.entries) {
-      final key = entry.key;
-      final value = entry.value;
-      if (value is YamlMap) {
-        clone[key] = _cloneMap(value);
-      } else if (value is YamlList) {
-        clone[key] = YamlList.wrap(
-          value.map((item) {
-            if (item is YamlMap) {
-              return _cloneMap(item);
-            }
-            return item;
-          }).toList(),
-        );
-      } else {
-        clone[key] = value;
-      }
+      final key = entry.key.toString();
+      map[key] = _toPlainValue(entry.value);
     }
-    return clone;
+    return map;
   }
 
-  String _emitYaml(YamlMap root) {
+  dynamic _toPlainValue(dynamic value) {
+    if (value is YamlMap) {
+      return _toPlainMap(value);
+    }
+    if (value is YamlList) {
+      return value.map(_toPlainValue).toList();
+    }
+    return value;
+  }
+
+  String _emitYaml(Map<String, dynamic> root) {
     final buffer = StringBuffer();
     _writeMap(buffer, root, 0);
     return buffer.toString();
   }
 
-  void _writeMap(StringBuffer buffer, YamlMap map, int indent) {
+  void _writeMap(StringBuffer buffer, Map<String, dynamic> map, int indent) {
     for (final entry in map.entries) {
-      final key = entry.key.toString();
+      final key = entry.key;
       final value = entry.value;
       final prefix = '  ' * indent;
 
-      if (value is YamlMap) {
+      if (value is Map<String, dynamic>) {
         buffer.writeln('$prefix$key:');
         _writeMap(buffer, value, indent + 1);
-      } else if (value is YamlList) {
+      } else if (value is List) {
         buffer.writeln('$prefix$key:');
         for (final item in value) {
-          if (item is YamlMap) {
+          if (item is Map<String, dynamic>) {
             buffer.writeln('$prefix  -');
             _writeMap(buffer, item, indent + 2);
           } else {

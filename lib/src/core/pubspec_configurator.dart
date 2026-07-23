@@ -51,8 +51,11 @@ class PubspecConfigurator {
 
   void _mergeEnvironment(Map<String, dynamic> root) {
     final environment = _ensureMap(root, 'environment');
-    environment.putIfAbsent('sdk', () => '^3.8.0');
-    environment.putIfAbsent('flutter', () => '>=3.32.0');
+    environment.putIfAbsent('sdk', () => ProjectDependencies.defaultSdkConstraint);
+    environment.putIfAbsent(
+      'flutter',
+      () => ProjectDependencies.defaultFlutterConstraint,
+    );
   }
 
   void _mergeDependencySection(

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter_generator/src/core/project_dependencies.dart';
 import 'package:flutter_generator/src/core/pubspec_configurator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -32,8 +33,11 @@ dependencies:
 
       final content = File('${tempDir.path}/pubspec.yaml').readAsStringSync();
       expect(content, contains('environment:'));
-      expect(content, contains("sdk: '^3.8.0'"));
-      expect(content, contains("flutter: '>=3.32.0'"));
+      expect(content, contains("sdk: '${ProjectDependencies.defaultSdkConstraint}'"));
+      expect(
+        content,
+        contains("flutter: '${ProjectDependencies.defaultFlutterConstraint}'"),
+      );
     });
 
     test('does not override existing dependency versions', () {
@@ -55,7 +59,10 @@ dependencies:
 
       final content = File('${tempDir.path}/pubspec.yaml').readAsStringSync();
       expect(content, contains("sdk: '^3.12.0'"));
-      expect(content, contains("flutter: '>=3.32.0'"));
+      expect(
+        content,
+        contains("flutter: '${ProjectDependencies.defaultFlutterConstraint}'"),
+      );
       expect(content, contains("dio: '^5.0.0'"));
       expect(content, isNot(contains("dio: '^5.10.0'")));
     });

@@ -32,4 +32,8 @@ abstract final class ProjectDependencies {
     'assets/images/',
     'assets/icons/',
   ];
+
+  /// Default environment constraints merged saat gen_init.
+  static const defaultSdkConstraint = '^3.12.0';
+  static const defaultFlutterConstraint = '>=3.44.0';
 }

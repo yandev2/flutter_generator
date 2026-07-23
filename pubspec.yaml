@@ -14,10 +14,13 @@ dependencies:
   json_annotation: ^4.12.0
   analyzer: ^12.0.0
   path: ^1.9.1
+  yaml: ^3.1.3
 
 executables:
   flutter_generator: flutter_generator
+  gen_init: generate_init
   gen_model: generate
+  gen_data: generate_data
   gen_usecase: generate_usecase
   gen_page: generate_page
 

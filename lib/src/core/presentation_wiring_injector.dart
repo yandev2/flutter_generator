@@ -3,23 +3,25 @@ import 'dart:io';
 
 import '../builder/presentation_wiring_builder.dart';
 import '../parser/repository_parser.dart';
-import 'build_runner_reminder.dart';
+import 'data_wiring_injector.dart';
+import 'feature_paths.dart';
 import 'string_extensions.dart';
 
-/// Meng-inject provider wiring ke `lib/presentation/<feature>/providers/`.
+/// Meng-inject provider wiring ke `lib/features/<feature>/presentation/providers/`.
 class PresentationWiringInjector {
   final String projectRoot;
-  final PresentationWiringBuilder _builder;
+  final DataWiringInjector _dataWiring;
 
   PresentationWiringInjector(
     this.projectRoot, {
     PresentationWiringBuilder? builder,
-  }) : _builder = builder ?? PresentationWiringBuilder();
+    DataWiringInjector? dataWiring,
+  }) : _dataWiring = dataWiring ??
+            DataWiringInjector(
+              projectRoot,
+              builder: builder,
+            );
 
-  /// Wire usecase provider (+ repository provider jika belum ada) untuk [pageName].
-  ///
-  /// [pageName] harus cocok dengan nama method di repository (mis. method `login`
-  /// → page `login`).
   void inject({
     required String featureName,
     required String pageName,
@@ -36,18 +38,18 @@ class PresentationWiringInjector {
     }
 
     final featureDir = featureName.toSnakeCase();
-    final providersDir =
-        Directory('$projectRoot/lib/presentation/$featureDir/providers');
+    final providersDir = Directory(
+      '$projectRoot/${FeaturePaths.presentationProviders(featureDir)}',
+    );
     if (!providersDir.existsSync()) {
       providersDir.createSync(recursive: true);
       print('ℹ️ Dibuat folder: ${providersDir.path}');
     }
 
-    _writeRepositoryProvider(providersDir, repositoryName);
-    _writeUsecaseProvider(
-      providersDir: providersDir,
-      pageName: pageName,
+    _dataWiring.injectAll(
+      featureName: featureDir,
       repositoryName: repositoryName,
+      methods: methods,
     );
     _patchPageProviderIfExists(
       providersDir: providersDir,
@@ -55,7 +57,6 @@ class PresentationWiringInjector {
     );
 
     print('✅ Auto-wiring selesai untuk page "${pageName.toSnakeCase()}".');
-    printBuildRunnerReminder();
   }
 
   ParsedMethod? _findMethod(List<ParsedMethod> methods, String pageName) {
@@ -70,46 +71,6 @@ class PresentationWiringInjector {
 
   List<String> _methodNames(List<ParsedMethod> methods) {
     return methods.map((method) => method.name.toSnakeCase()).toList();
-  }
-
-  void _writeRepositoryProvider(Directory providersDir, String repositoryName) {
-    final fileName =
-        PresentationWiringBuilder.repositoryProviderFileName(repositoryName);
-    final file = File('${providersDir.path}/$fileName');
-
-    if (file.existsSync()) {
-      print('⚠️ Skip: ${file.path} sudah ada.');
-      return;
-    }
-
-    file.writeAsStringSync(_builder.buildRepositoryProvider(repositoryName));
-    print('✅ Generated: ${file.path}');
-  }
-
-  void _writeUsecaseProvider({
-    required Directory providersDir,
-    required String pageName,
-    required String repositoryName,
-  }) {
-    final fileName = PresentationWiringBuilder.usecaseProviderFileName(pageName);
-    final file = File('${providersDir.path}/$fileName');
-    final usecaseFolderName =
-        PresentationWiringBuilder.usecaseFolderNameFromRepository(repositoryName);
-
-    final content = _builder.buildUsecaseProvider(
-      pageName: pageName,
-      repositoryName: repositoryName,
-      usecaseFolderName: usecaseFolderName,
-    );
-
-    if (file.existsSync()) {
-      file.writeAsStringSync(content);
-      print('🔄 Updated: ${file.path}');
-      return;
-    }
-
-    file.writeAsStringSync(content);
-    print('✅ Generated: ${file.path}');
   }
 
   void _patchPageProviderIfExists({

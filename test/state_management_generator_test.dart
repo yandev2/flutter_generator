@@ -35,16 +35,17 @@ void main() {
       expect(code, isNot(contains('GetxController')));
     });
 
-    test('view template uses ConsumerWidget + ref.watch', () {
-      final code = builder.buildView('login');
+    test('page template uses ConsumerWidget + ref.watch + notifier', () {
+      final code = builder.buildPage('login');
 
       expect(
         code,
         contains("import 'package:flutter_riverpod/flutter_riverpod.dart';"),
       );
-      expect(code, contains('class LoginView extends ConsumerWidget'));
+      expect(code, contains('class LoginPage extends ConsumerWidget'));
       expect(code, contains('final theme = Theme.of(context);'));
-      expect(code, contains('ref.watch(loginProvider)'));
+      expect(code, contains('final loginState = ref.watch(loginProvider);'));
+      expect(code, contains('final loginNotifier = ref.read(loginProvider.notifier);'));
       expect(code, contains('theme.textTheme.titleLarge'));
       expect(code, contains('WidgetRef ref'));
       expect(code, isNot(contains('ReactiveGetView')));
@@ -65,12 +66,18 @@ void main() {
         InitTemplate.routePaths,
         InitTemplate.themeProvider,
         InitTemplate.main,
+        InitTemplate.bootstrap,
+        InitTemplate.app,
         InitTemplate.splashProvider,
-        InitTemplate.splashView,
+        InitTemplate.splashPage,
         InitTemplate.dashboardState,
         InitTemplate.dashboardProvider,
-        InitTemplate.dashboardView,
+        InitTemplate.dashboardPage,
         InitTemplate.analysisOptions,
+        InitTemplate.envConfig,
+        InitTemplate.exceptionMapper,
+        InitTemplate.authRepository,
+        InitTemplate.loginPage,
       ];
 
       for (final template in templates) {
@@ -114,16 +121,51 @@ void main() {
       expect(InitTemplate.themeProvider, contains('@Riverpod(keepAlive: true)'));
     });
 
-    test('main uses ProviderScope + MaterialApp.router', () {
+    test('main delegates to bootstrap', () {
       final code = InitTemplate.main;
+
+      expect(code, contains("import 'app/bootstrap.dart';"));
+      expect(code, contains('await bootstrap();'));
+      expect(code, isNot(contains('ProviderScope(')));
+    });
+
+    test('bootstrap uses ProviderScope + App widget', () {
+      final code = InitTemplate.bootstrap;
 
       expect(
         code,
         contains("import 'package:flutter_riverpod/flutter_riverpod.dart';"),
       );
+      expect(code, contains("import 'package:flutter_dotenv/flutter_dotenv.dart';"));
+      expect(code, contains("await dotenv.load(fileName: '.env');"));
       expect(code, contains('ProviderScope('));
+      expect(code, contains('child: const App()'));
+      expect(code, contains('sharedPreferencesProvider.overrideWithValue'));
+    });
+
+    test('env config reads values from flutter_dotenv', () {
+      final code = InitTemplate.envConfig;
+
+      expect(code, contains("import 'package:flutter_dotenv/flutter_dotenv.dart';"));
+      expect(code, contains("dotenv.env['BASE_URL']"));
+      expect(code, contains("dotenv.env['APP_NAME']"));
+    });
+
+    test('api client uses EnvConfig for base URL and timeouts', () {
+      final code = InitTemplate.apiClient;
+
+      expect(code, contains("import '../constants/env_config.dart';"));
+      expect(code, contains('baseUrl: EnvConfig.baseUrl'));
+      expect(code, contains('EnvConfig.connectionTimeout'));
+      expect(code, isNot(contains('AppConstants.baseUrl')));
+    });
+
+    test('app uses MaterialApp.router', () {
+      final code = InitTemplate.app;
+
+      expect(code, contains('class App extends ConsumerWidget'));
       expect(code, contains('MaterialApp.router('));
-      expect(code, contains('class MyApp extends ConsumerWidget'));
+      expect(code, contains('title: EnvConfig.appName'));
       expect(code, contains('ref.watch(appRouterProvider)'));
       expect(code, isNot(contains('Obx(')));
     });
@@ -133,22 +175,61 @@ void main() {
 
       expect(code, contains("import 'package:go_router/go_router.dart';"));
       expect(code, contains('GoRouter appRouter(Ref ref)'));
-      expect(code, contains('GoRoute('));
-      expect(code, contains('RoutePaths.splash'));
+      expect(code, contains('refreshListenable: refreshNotifier'));
+      expect(code, contains('redirect: (context, state)'));
+      expect(code, contains('RoutePaths.login'));
+      expect(code, contains('const LoginPage()'));
+      expect(code, contains('const SplashPage()'));
+      expect(code, contains('const DashboardPage()'));
     });
 
-    test('dashboard view uses ConsumerWidget + ref.watch', () {
-      final code = InitTemplate.dashboardView;
+    test('auth provider persists token via SharedPreferences', () {
+      final code = InitTemplate.authProvider;
 
-      expect(code, contains('class DashboardView extends ConsumerWidget'));
+      expect(code, contains('AppConstants.tokenKey'));
+      expect(code, contains('sharedPreferencesProvider'));
+      expect(code, contains('apiClientProvider'));
+      expect(code, contains('setToken(token)'));
+      expect(code, contains('clearToken()'));
+    });
+
+    test('exception mapper converts exceptions to failures', () {
+      final code = InitTemplate.exceptionMapper;
+
+      expect(code, contains('Failure toFailure(Object error)'));
+      expect(code, contains('UnauthorizedException'));
+      expect(code, contains('Future<Either<Failure, T>> guard'));
+    });
+
+    test('auth repository skeleton uses Either and Failure', () {
+      final code = InitTemplate.authRepository;
+
+      expect(code, contains('abstract class AuthRepository'));
+      expect(code, contains('Future<Either<Failure, bool>> login'));
+      expect(code, contains('Future<Either<Failure, bool>> logout'));
+    });
+
+    test('splash page redirects based on auth state', () {
+      final code = InitTemplate.splashPage;
+
+      expect(code, contains('authProvider'));
+      expect(code, contains('RoutePaths.login'));
+      expect(code, contains('RoutePaths.dashboard'));
+    });
+
+    test('dashboard page uses ConsumerWidget + ref.watch + notifier', () {
+      final code = InitTemplate.dashboardPage;
+
+      expect(code, contains('class DashboardPage extends ConsumerWidget'));
       expect(code, contains('final theme = Theme.of(context);'));
-      expect(code, contains('ref.watch(dashboardProvider)'));
+      expect(code, contains('final dashboardState = ref.watch(dashboardProvider);'));
+      expect(code, contains('final dashboardNotifier = ref.read(dashboardProvider.notifier);'));
       expect(code, contains('theme.textTheme.headlineMedium'));
       expect(code, isNot(contains('Obx(')));
     });
 
-    test('splash view uses Theme.of(context)', () {
-      final code = InitTemplate.splashView;
+    test('splash page uses Theme.of(context)', () {
+      final code = InitTemplate.splashPage;
 
       expect(code, contains('final theme = Theme.of(context);'));
       expect(code, contains('theme.colorScheme.surface'));
@@ -215,7 +296,7 @@ void main() {
         }
       });
 
-      final routeDir = '${tempDir.path}/lib/core/router';
+      final routeDir = '${tempDir.path}/lib/app/router';
       Directory(routeDir).createSync(recursive: true);
 
       RouteInjector(routeDir).inject('auth', 'login');
@@ -227,7 +308,13 @@ void main() {
       expect(content, contains("import 'package:go_router/go_router.dart';"));
       expect(content, contains('GoRoute('));
       expect(content, contains('RoutePaths.login'));
-      expect(content, contains('const LoginView()'));
+      expect(content, contains('const LoginPage()'));
+      expect(
+        content,
+        contains(
+          "import '../../features/auth/presentation/pages/login_page.dart';",
+        ),
+      );
       expect(content, isNot(contains('package:get_x_master')));
       expect(content, isNot(contains('GetPage')));
     });
@@ -242,7 +329,7 @@ void main() {
         }
       });
 
-      final routeDir = '${tempDir.path}/lib/core/router';
+      final routeDir = '${tempDir.path}/lib/app/router';
       Directory(routeDir).createSync(recursive: true);
 
       RouteInjector(routeDir).inject('auth', 'login');
@@ -261,7 +348,7 @@ void main() {
         }
       });
 
-      final routeDir = '${tempDir.path}/lib/core/router';
+      final routeDir = '${tempDir.path}/lib/app/router';
       Directory(routeDir).createSync(recursive: true);
 
       final injector = RouteInjector(routeDir);
@@ -269,10 +356,10 @@ void main() {
       injector.inject('auth', 'login');
 
       final content = File('$routeDir/app_router.dart').readAsStringSync();
-      final viewImportCount = 'login_view.dart'.allMatches(content).length;
+      final pageImportCount = 'login_page.dart'.allMatches(content).length;
       final goRouteCount = 'RoutePaths.login'.allMatches(content).length;
 
-      expect(viewImportCount, 1);
+      expect(pageImportCount, 1);
       expect(goRouteCount, 1);
     });
 
@@ -286,7 +373,7 @@ void main() {
         }
       });
 
-      final routeDir = '${tempDir.path}/lib/core/router';
+      final routeDir = '${tempDir.path}/lib/app/router';
       Directory(routeDir).createSync(recursive: true);
 
       final appRouterFile = File('$routeDir/app_router.dart');
@@ -294,7 +381,7 @@ void main() {
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../presentation/auth/views/login_view.dart';
+import '../../features/auth/presentation/pages/login_page.dart';
 import 'route_paths.dart';
 
 part 'app_router.g.dart';
@@ -306,7 +393,7 @@ GoRouter appRouter(Ref ref) {
     routes: [
       GoRoute(
         path: RoutePaths.login,
-        builder: (context, state) => const LoginView(),
+        builder: (context, state) => const LoginPage(),
       ),
     ],
   );
@@ -316,16 +403,13 @@ GoRouter appRouter(Ref ref) {
       RouteInjector(routeDir).inject('auth', 'login');
 
       final content = appRouterFile.readAsStringSync();
-      expect('login_view.dart'.allMatches(content).length, 1);
+      expect('login_page.dart'.allMatches(content).length, 1);
       expect('RoutePaths.login'.allMatches(content).length, 1);
     });
   });
 }
 
 /// Test accessors for private InitBuilder template strings.
-///
-/// Templates are `static const String` fields inside
-/// `lib/src/builder/init_builder.dart`, so they are read via source parsing.
 abstract final class InitTemplate {
   static String get tabNavigationState => _read('_tabNavigationStateTemplate');
   static String get tabNavigationProvider =>
@@ -338,12 +422,19 @@ abstract final class InitTemplate {
   static String get routePaths => _read('_routePathsTemplate');
   static String get themeProvider => _read('_themeProviderTemplate');
   static String get main => _read('_mainTemplate');
+  static String get bootstrap => _read('_bootstrapTemplate');
+  static String get app => _read('_appTemplate');
   static String get splashProvider => _read('_splashProviderTemplate');
-  static String get splashView => _read('_splashViewTemplate');
+  static String get splashPage => _read('_splashPageTemplate');
   static String get dashboardState => _read('_dashboardStateTemplate');
   static String get dashboardProvider => _read('_dashboardProviderTemplate');
-  static String get dashboardView => _read('_dashboardViewTemplate');
+  static String get dashboardPage => _read('_dashboardPageTemplate');
   static String get analysisOptions => _read('_analysisOptionsTemplate');
+  static String get envConfig => _read('_envConfigTemplate');
+  static String get apiClient => _read('_apiClientTemplate');
+  static String get exceptionMapper => _read('_exceptionMapperTemplate');
+  static String get authRepository => _read('_authRepositoryTemplate');
+  static String get loginPage => _read('_loginPageTemplate');
 }
 
 String _read(String fieldName) {

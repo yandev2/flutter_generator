@@ -30,6 +30,22 @@ class ParsedImport {
   }
 }
 
+class ParsedParameter {
+  final String name;
+  final String type;
+  final bool isNamed;
+  final bool hasDefault;
+
+  ParsedParameter({
+    required this.name,
+    required this.type,
+    this.isNamed = false,
+    this.hasDefault = false,
+  });
+
+  bool get isEntityType => type.contains('Entity');
+}
+
 class ParsedMethod {
   final String name;
   final String returnType;
@@ -37,6 +53,7 @@ class ParsedMethod {
   final String parameters;
   final String parameterCall;
   final Set<String> requiredTypes;
+  final List<ParsedParameter> parsedParameters;
 
   ParsedMethod({
     required this.name,
@@ -45,6 +62,7 @@ class ParsedMethod {
     required this.parameters,
     required this.parameterCall,
     required this.requiredTypes,
+    this.parsedParameters = const [],
   });
 }
 
@@ -129,6 +147,7 @@ class RepositoryParser {
 
             final rightType = _extractRightType(returnType);
             final parameterCall = _buildParameterCall(member.parameters);
+            final parsedParameters = _parseParameters(member.parameters);
 
             methods.add(
               ParsedMethod(
@@ -138,6 +157,7 @@ class RepositoryParser {
                 parameters: parameters,
                 parameterCall: parameterCall,
                 requiredTypes: requiredTypes,
+                parsedParameters: parsedParameters,
               ),
             );
           }
@@ -154,6 +174,37 @@ class RepositoryParser {
       parsedImports: parsedImports,
       methods: methods,
     );
+  }
+
+  static List<ParsedParameter> _parseParameters(
+    FormalParameterList? parameterList,
+  ) {
+    if (parameterList == null) {
+      return const [];
+    }
+
+    final parsed = <ParsedParameter>[];
+    for (final param in parameterList.parameters) {
+      final name = _formalParameterName(param);
+      if (name == null) {
+        continue;
+      }
+
+      final typeAnnotation = _parameterType(param);
+      final type = typeAnnotation?.toSource() ?? 'dynamic';
+      final isNamed = param.isNamed;
+      final hasDefault = param is DefaultFormalParameter;
+
+      parsed.add(
+        ParsedParameter(
+          name: name,
+          type: type,
+          isNamed: isNamed,
+          hasDefault: hasDefault,
+        ),
+      );
+    }
+    return parsed;
   }
 
   static String _buildParameterCall(FormalParameterList? parameterList) {

@@ -9,7 +9,7 @@ class ModelBuilder {
     final entityFileName = '${definition.name.toSnakeCase()}_entity.dart';
 
     // Import entity
-    buffer.writeln("import '../../domain/entity/$entityFileName';");
+    buffer.writeln("import '../../domain/entities/$entityFileName';");
 
     // We also need to import nested models and entities if there are any
     final nestedTypes = definition.fields
@@ -20,8 +20,7 @@ class ModelBuilder {
     for (var typeName in nestedTypes) {
       if (typeName != definition.name.toSnakeCase()) {
         buffer.writeln("import '${typeName}_model.dart';");
-        buffer.writeln(
-            "import '../../domain/entity/${typeName}_entity.dart';");
+        buffer.writeln("import '../../domain/entities/${typeName}_entity.dart';");
       }
     }
     buffer.writeln();

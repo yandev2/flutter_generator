@@ -1,440 +1,1104 @@
-# Panduan Riverpod untuk Flutter Generator Pro
-
-Dokumen ini menjelaskan arsitektur **Riverpod 3.x + go_router** yang dihasilkan oleh generator, khusus ditujukan untuk developer yang terbiasa dengan **GetX** dan ingin beralih.
-
-> Ringkas: **GetX** menyatukan state + DI + routing dalam satu paket. **Riverpod** fokus ke **state + dependency injection**, sedangkan **routing** ditangani `go_router` secara terpisah.
-
----
-
-## Daftar Isi
-
-- [Versi Package](#versi-package)
-- [Filosofi Dasar](#filosofi-dasar)
-- [Struktur Folder](#struktur-folder)
-- [Konsep Inti](#konsep-inti)
-- [Peta Padanan GetX to Riverpod](#peta-padanan-getx--riverpod)
-- [State + Notifier](#state--notifier)
-- [View: ConsumerWidget](#view-consumerwidget)
-- [Dependency Injection](#dependency-injection)
-- [Routing dengan go_router](#routing-dengan-go_router)
-- [Theme](#theme)
-- [Alur Aplikasi](#alur-aplikasi)
-- [Code Generation](#code-generation)
-- [Testing](#testing)
-- [Cheat Sheet](#cheat-sheet)
-
----
-
-## Versi Package
-
-```yaml
-dependencies:
-  flutter_riverpod: ^3.3.2
-  riverpod_annotation: ^4.0.3
-  go_router: ^17.3.0
-
-dev_dependencies:
-  build_runner: ^2.15.1
-  riverpod_generator: ^4.0.4
-  riverpod_lint: ^3.1.4
-  flutter_lints: ^6.0.0
-```
-
-> Catatan Riverpod 3.0: `Ref` sudah **unified** — tidak ada lagi `FooRef`. Provider fungsional cukup memakai `Ref ref`.
-
----
-
-## Filosofi Dasar
-
-| GetX | Riverpod |
-|------|----------|
-| Satu paket untuk state + DI + routing + utils | Riverpod = state + DI. Routing pakai `go_router` |
-| Controller hidup/mati ikut Binding + navigasi | Provider hidup/mati ikut siapa yang `watch` + `keepAlive` |
-| State reaktif = `.obs` + `Obx()` | State reaktif = objek `state` + `ref.watch()` |
-| Ambil dependency = `Get.find<T>()` (runtime) | Ambil dependency = `ref.read/watch` (compile-time safe) |
-
----
-
-## Struktur Folder
-
-```
 lib/
-├── core/
-│   ├── const/app_constants.dart
-│   ├── error/
-│   │   ├── failures.dart              # Freezed union Failure
-│   │   └── exceptions.dart
-│   ├── navigation/
-│   │   ├── tab_navigation_state.dart
-│   │   └── tab_navigation_provider.dart
-│   ├── network/
-│   │   ├── api_client.dart
-│   │   └── api_client_provider.dart   # provider global ApiClient
+
+├── app/
+│
+│   ├── app.dart
+│   ├── bootstrap.dart
+│   │
 │   ├── router/
-│   │   ├── route_paths.dart           # konstanta path
-│   │   └── app_router.dart            # GoRouter (provider)
-│   └── theme/
-│       ├── app_theme.dart             # ThemeData light/dark
-│       └── theme_provider.dart        # Notifier ThemeMode
-├── data/
-│   ├── model/
-│   ├── repository_impl/
-│   └── source/
-├── domain/
-│   ├── entity/
-│   ├── repository/
-│   └── usecase/
-├── presentation/
-│   ├── splash/
-│   │   ├── providers/splash_provider.dart
-│   │   └── views/splash_view.dart
-│   └── dashboard/
-│       ├── states/dashboard_state.dart
-│       ├── providers/dashboard_provider.dart
-│       └── views/dashboard_view.dart
-├── shared/
-│   ├── auth/auth_provider.dart        # state auth global (keepAlive)
+│   │   ├── app_router.dart
+│   │   ├── route_names.dart
+│   │   ├── route_paths.dart
+│   │   └── route_guards.dart
+│   │
 │   └── providers/
-│       └── shared_preferences_provider.dart
+│       └── app_providers.dart
+│
+├── core/
+│
+│   ├── constants/
+│   │   ├── app_constants.dart
+│   │   ├── api_constants.dart
+│   │   ├── storage_keys.dart
+│   │   └── asset_paths.dart
+│   │
+│   ├── theme/
+│   │   ├── app_theme.dart
+│   │   └── app_colors.dart
+│   │
+│   ├── network/
+│   │   ├── dio_client.dart
+│   │   ├── network_info.dart
+│   │   ├── interceptors/
+│   │   │   ├── auth_interceptor.dart
+│   │   │   ├── logger_interceptor.dart
+│   │   │   └── retry_interceptor.dart
+│   │   │
+│   │   └── models/
+│   │       └── api_response.dart
+│   │
+│   ├── storage/
+│   │   ├── secure_storage.dart
+│   │   ├── shared_preferences_storage.dart
+│   │   └── hive_storage.dart
+│   │
+│   ├── services/
+│   │   ├── biometric_service.dart
+│   │   ├── location_service.dart
+│   │   ├── notification_service.dart
+│   │   ├── camera_service.dart
+│   │   ├── image_picker_service.dart
+│   │   └── file_picker_service.dart
+│   │
+│   ├── errors/
+│   │   ├── failures.dart
+│   │   ├── exceptions.dart
+│   │   └── error_mapper.dart
+│   │
+│   ├── usecases/
+│   │   └── usecase.dart
+│   │
+│   ├── extensions/
+│   │   ├── context_extension.dart
+│   │   ├── string_extension.dart
+│   │   ├── date_extension.dart
+│   │   └── currency_extension.dart
+│   │
+│   ├── utils/
+│   │   ├── validators.dart
+│   │   ├── formatter.dart
+│   │   ├── logger.dart
+│   │   ├── helpers.dart
+│   │   └── debounce.dart
+│   │
+│   ├── widgets/
+│   │   ├── app_button.dart
+│   │   ├── app_text_field.dart
+│   │   ├── loading_widget.dart
+│   │   ├── empty_widget.dart
+│   │   └── error_state_widget.dart
+│   │
+│   └── di/
+│       └── dependency_injection.dart
+│
+├── features/
+│
+│   ├── auth/
+│   │
+│   │   ├── presentation/
+│   │   │
+│   │   │   ├── pages/
+│   │   │   ├── widgets/
+│   │   │   ├── providers/
+│   │   │   └── states/
+│   │   │
+│   │   ├── domain/
+│   │   │
+│   │   │   ├── entities/
+│   │   │   ├── repositories/
+│   │   │   └── usecases/
+│   │   │
+│   │   └── data/
+│   │
+│   │       ├── datasources/
+│   │       ├── models/
+│   │       └── repositories/
+│   │
+│   ├── profile/
+│   ├── attendance/
+│   ├── employee/
+│   ├── leave/
+│   ├── announcement/
+│   ├── notification/
+│   └── dashboard/
+│
+├── l10n/
+│
+├── assets/
+│   ├── images/
+│   ├── icons/
+│   ├── fonts/
+│   └── animations/
+│
+└── main.dart
+
+
+
+
+
+# Flutter Clean Architecture (Feature First) - Architecture Handbook
+
+# 1. Gambaran Umum
+
+Struktur ini dirancang untuk:
+
+- Flutter + Riverpod Generator
+- GoRouter
+- Dio
+- Clean Architecture
+- Feature First
+- Enterprise Scale
+- Mudah dirawat dalam jangka panjang
+
+Prinsip utama:
+
+```text
+Presentation
+      ↓
+Domain
+      ↓
+Data
+```
+
+Rule:
+
+- Presentation boleh mengetahui Domain.
+- Data mengimplementasikan Domain.
+- Domain tidak mengetahui Flutter.
+- Domain tidak mengetahui Riverpod.
+- Domain tidak mengetahui Dio.
+- Core tidak boleh mengimpor Feature.
+
+---
+
+# 2. Struktur Root
+
+```text
+lib/
+├── app/
+├── core/
+├── features/
+├── l10n/
+├── assets/
 └── main.dart
 ```
 
-Per page dihasilkan **3 file**: `states/` (data), `providers/` (logic/Notifier), `views/` (UI). Ini menggantikan pola lama `bindings/ + controllers/ + views/` dari GetX (folder `bindings/` tidak ada lagi).
+# main.dart
+
+Entry point aplikasi.
+
+Contoh:
+
+```dart
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await bootstrap();
+}
+```
+
+Tugas:
+- Menjalankan aplikasi
+- Memanggil bootstrap
+- Menyiapkan ProviderScope
 
 ---
 
-## Konsep Inti
+# 3. Folder app/
 
-Riverpod punya beberapa jenis provider. Yang dipakai generator:
+Berisi konfigurasi global aplikasi.
 
-- **Notifier (`@riverpod class X extends _$X`)** → mengelola state + logic (pengganti `GetxController`).
-- **Functional provider (`@riverpod T x(Ref ref)`)** → menyediakan dependency (pengganti `Get.put`/`Get.lazyPut`).
-- **`@Riverpod(keepAlive: true)`** → provider global yang tidak auto-dispose (pengganti `Get.put(..., permanent: true)`).
-
----
-
-## Peta Padanan GetX to Riverpod
-
-| GetX | Riverpod |
-|------|----------|
-| `GetMaterialApp` | `ProviderScope` + `MaterialApp.router` |
-| `GetPage` + `Binding` | `GoRoute` (tanpa binding) |
-| `GetxController` | `@riverpod` Notifier |
-| `.obs` / `.value` | field di `state` / `copyWith` |
-| `Obx(() => ...)` | `ref.watch(provider)` |
-| `GetView<T>` | `ConsumerWidget` |
-| `Get.find<T>()` | `ref.read(xxxProvider)` |
-| `Get.put(permanent: true)` | `@Riverpod(keepAlive: true)` |
-| `Get.lazyPut` | provider biasa (auto lazy) |
-| `Get.toNamed()` | `context.push()` |
-| `Get.offAllNamed()` | `context.go()` |
-| `Get.back()` | `context.pop()` |
-| `GetxService` | `keepAlive` Notifier |
-| `onInit` / `onClose` | `build()` / `ref.onDispose` |
-| `Get.arguments` | `GoRouterState.extra` |
-
----
-
-## State + Notifier
-
-Di GetX, state dan logic menyatu di controller. Di Riverpod, **state dipisah** dari Notifier.
-
-**GetX:**
-```dart
-class DashboardController extends GetxController {
-  final count = 0.obs;             // state
-  void increment() => count.value++; // logic
-}
+```text
+app/
+├── app.dart
+├── bootstrap.dart
+├── router/
+└── providers/
 ```
 
-**Riverpod:**
+## app.dart
+
+Root widget aplikasi.
+
+Biasanya berisi:
+
 ```dart
-// states/dashboard_state.dart — data saja (immutable, @freezed)
-import 'package:freezed_annotation/freezed_annotation.dart';
-
-part 'dashboard_state.freezed.dart';
-
-@freezed
-abstract class DashboardState with _$DashboardState {
-  const factory DashboardState({
-    @Default(0) int count,
-  }) = _DashboardState;
-}
-
-// providers/dashboard_provider.dart — logic
-@riverpod
-class Dashboard extends _$Dashboard {
-  @override
-  DashboardState build() => const DashboardState(); // initial state (mirip onInit)
-
-  void increment() => state = state.copyWith(count: state.count + 1);
-}
-```
-
-Poin penting:
-- `build()` mengembalikan **state awal**.
-- Mengubah state = **assign `state` baru** via `copyWith` (bukan mutasi in-place).
-- Untuk state sederhana (mis. counter murni), boleh langsung `int build() => 0;` tanpa class state.
-
----
-
-## View: ConsumerWidget
-
-**GetX:**
-```dart
-class DashboardView extends GetView<DashboardController> {
-  Widget build(context) => Obx(() => Text('${controller.count}'));
-}
-```
-
-**Riverpod:**
-```dart
-class DashboardView extends ConsumerWidget {
-  const DashboardView({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final state = ref.watch(dashboardProvider);          // seperti Obx + controller
-    final notifier = ref.read(dashboardProvider.notifier); // akses method
-
-    return Scaffold(
-      body: Center(
-        child: Text(
-          'Count: ${state.count}',
-          style: theme.textTheme.headlineMedium,
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: notifier.increment,
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
-}
-```
-
-Aturan `ref.watch` vs `ref.read`:
-- **`ref.watch`** → di dalam `build()`, subscribe + rebuild otomatis (seperti `Obx`).
-- **`ref.read`** → di callback (`onPressed`, dsb), baca sekali tanpa subscribe.
-
----
-
-## Dependency Injection
-
-**GetX (Binding):**
-```dart
-class InitialBinding implements Bindings {
-  void dependencies() {
-    Get.smartLazyPut<ApiClient>(() => ApiClient(), fenix: true);
-    Get.put(AuthService(), permanent: true);
-  }
-}
-final api = Get.find<ApiClient>();
-```
-
-**Riverpod (provider global):**
-```dart
-@Riverpod(keepAlive: true)
-ApiClient apiClient(Ref ref) => ApiClient();
-
-// pakai di mana saja:
-final api = ref.read(apiClientProvider);
-```
-
-`SharedPreferences` (async) di-inject via override di `main()`:
-```dart
-@Riverpod(keepAlive: true)
-SharedPreferences sharedPreferences(Ref ref) =>
-    throw UnimplementedError('override di main()');
-
-// main.dart
-final prefs = await SharedPreferences.getInstance();
-runApp(
-  ProviderScope(
-    overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-    child: const MyApp(),
-  ),
+MaterialApp.router(
+  routerConfig: router,
+  theme: AppTheme.lightTheme,
 );
 ```
 
-Chaining untuk Clean Architecture (usecase to repository to apiClient):
-```dart
-@riverpod
-LoginUsecase loginUsecase(Ref ref) =>
-    LoginUsecase(ref.watch(authRepositoryProvider));
-```
-
-### Auto-Wiring via Usecase Generator
-
-Jalankan `dart run flutter_generator:gen_usecase`, lalu pilih **y** saat ditanya inject. Masukkan **fitur** + **page** (page = nama method repository).
-
-File yang di-generate (semua di `presentation/<fitur>/providers/`):
-
-| File | Fungsi |
-|------|--------|
-| `auth_repository_provider.dart` | Wire `AuthRepositoryImpl` ← `apiClientProvider` (sekali per fitur) |
-| `login_usecase_provider.dart` | Wire `LoginUsecase` ← `authRepositoryProvider` |
-| `login_provider.dart` | Di-link otomatis jika sudah ada dari `gen_page` |
-
-Domain (`LoginUsecase` class) dan Data (`AuthRepositoryImpl`) **tidak** import Riverpod.
+Tanggung jawab:
+- Theme
+- Router
+- Localization
+- MaterialApp
 
 ---
 
-## Routing dengan go_router
+## bootstrap.dart
 
-Routing tidak lagi menyatu dengan state. Semua route ada di `core/router/`.
+Inisialisasi aplikasi.
+
+Biasanya:
+
+- Firebase.initializeApp()
+- Hive.init()
+- Logger setup
+- Environment setup
+- Dependency setup
+
+Contoh:
 
 ```dart
-// route_paths.dart
-abstract class RoutePaths {
-  static const splash = '/';
-  static const login = '/login';
-  static const dashboard = '/dashboard';
-}
-
-// app_router.dart
-@Riverpod(keepAlive: true)
-GoRouter appRouter(Ref ref) {
-  return GoRouter(
-    initialLocation: RoutePaths.splash,
-    routes: [
-      GoRoute(path: RoutePaths.splash, builder: (c, s) => const SplashView()),
-      GoRoute(path: RoutePaths.dashboard, builder: (c, s) => const DashboardView()),
-    ],
+Future<void> bootstrap() async {
+  runApp(
+    const ProviderScope(
+      child: App(),
+    ),
   );
 }
 ```
 
-Navigasi dari widget:
+---
+
+# app/router/
+
+Semua konfigurasi navigasi.
+
+## app_router.dart
+
+Tempat konfigurasi GoRouter.
+
+Contoh:
+
 ```dart
-context.go(RoutePaths.dashboard);   // = Get.offAllNamed
-context.push(RoutePaths.login);     // = Get.toNamed
-context.pop();                      // = Get.back
+final router = GoRouter(
+ routes: []
+);
 ```
 
-Navigasi berbasis async (contoh splash):
-```dart
-class SplashView extends ConsumerWidget {
-  Widget build(context, ref) {
-    final theme = Theme.of(context);
+---
 
-    ref.listen(splashInitProvider, (prev, next) {
-      next.whenOrNull(data: (_) => context.go(RoutePaths.dashboard));
-    });
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      body: const Center(child: FlutterLogo(size: 100)),
-    );
-  }
+## route_names.dart
+
+Nama route.
+
+```dart
+class RouteNames {
+ static const login = "login";
+ static const home = "home";
+}
+```
+
+Kelebihan:
+- Tidak hardcode string
+
+---
+
+## route_paths.dart
+
+Path route.
+
+```dart
+class RoutePaths {
+ static const login = "/login";
+ static const home = "/home";
 }
 ```
 
 ---
 
-## Theme
+## route_guards.dart
 
-**GetX:** `Get.changeThemeMode(...)` di `GetxController`.
+Guard dan redirect.
 
-**Riverpod:**
+Contoh:
+
 ```dart
-@Riverpod(keepAlive: true)
-class AppThemeMode extends _$AppThemeMode {
-  @override
-  ThemeMode build() => ThemeMode.system;
-  void toggle() =>
-      state = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+if (!isLoggedIn) {
+ return '/login';
 }
-
-// main.dart
-final themeMode = ref.watch(appThemeModeProvider);
-MaterialApp.router(themeMode: themeMode, /* ... */);
 ```
+
+Digunakan untuk:
+
+- Authentication
+- Authorization
+- Role permission
 
 ---
 
-## Alur Aplikasi
+# app/providers/
 
-```mermaid
-flowchart TB
-  main["main() — ambil SharedPreferences"] --> scope[ProviderScope + overrides]
-  scope --> app["MyApp (ConsumerWidget)"]
-  app -->|"ref.watch"| router[appRouterProvider - GoRouter]
-  app -->|"ref.watch"| theme[appThemeModeProvider]
-  router --> pages["GoRoute -> View (ConsumerWidget)"]
-  pages -->|"ref.watch"| notifier["Notifier -> State"]
-  notifier -->|"ref.read"| deps["Provider DI (ApiClient, Usecase)"]
-```
+Provider global aplikasi.
 
----
+## app_providers.dart
 
-## Code Generation
-
-Setiap Notifier/provider memakai `part 'xxx.g.dart';`. State UI memakai `part 'xxx_state.freezed.dart';`. Jalankan:
-
-```bash
-dart run build_runner build -d
-# atau saat aktif mengembangkan:
-dart run build_runner watch -d
-```
-
-Ini sama seperti alur **Freezed** di layer domain & error. File `*.g.dart` dan `*.freezed.dart` **jangan** di-edit manual dan boleh di-`.gitignore`.
-
----
-
-## Testing
-
-Riverpod memudahkan mocking lewat **override**:
+Contoh provider global:
 
 ```dart
-test('increment menambah count', () {
-  final container = ProviderContainer();
-  addTearDown(container.dispose);
+localeProvider
+connectivityProvider
+routerProvider
+```
 
-  container.read(dashboardProvider.notifier).increment();
+Provider bisnis tidak boleh disimpan di sini.
 
-  expect(container.read(dashboardProvider).count, 1);
-});
+---
 
-test('login memakai mock service', () {
-  final container = ProviderContainer(
-    overrides: [
-      apiClientProvider.overrideWithValue(MockApiClient()),
-    ],
-  );
-  addTearDown(container.dispose);
-  // ...
-});
+# 4. Folder core/
+
+Folder bersama seluruh aplikasi.
+
+```text
+core/
+├── constants/
+├── theme/
+├── network/
+├── storage/
+├── services/
+├── errors/
+├── usecases/
+├── extensions/
+├── utils/
+├── widgets/
+└── di/
 ```
 
 ---
 
-## Cheat Sheet
+# core/constants/
 
-```
-GetX                          →  Riverpod
-─────────────────────────────────────────────────
-GetMaterialApp                →  ProviderScope + MaterialApp.router
-GetPage + Binding             →  GoRoute (tanpa binding)
-GetxController                →  @riverpod Notifier
-.obs / .value                 →  state / copyWith
-Obx(() => ...)                →  ref.watch(provider)
-GetView<T>                    →  ConsumerWidget
-Get.find<T>()                 →  ref.read(xxxProvider)
-Get.put(permanent: true)      →  @Riverpod(keepAlive: true)
-Get.lazyPut                   →  provider biasa (auto lazy)
-Get.toNamed()                 →  context.push()
-Get.offAllNamed()             →  context.go()
-Get.back()                    →  context.pop()
-GetxService                   →  keepAlive Notifier
-onInit / onClose              →  build() / ref.onDispose
-Get.arguments                 →  GoRouterState.extra
+Tempat seluruh konstanta.
+
+## app_constants.dart
+
+Contoh:
+
+```dart
+class AppConstants {
+ static const appName = "Presensiku";
+}
 ```
 
 ---
 
-## Referensi
+## api_constants.dart
 
-- Riverpod: https://riverpod.dev
-- go_router: https://pub.dev/packages/go_router
-- Migrasi Riverpod 2 to 3: https://riverpod.dev/docs/3.0_migration
+Contoh:
+
+```dart
+class ApiConstants {
+ static const baseUrl =
+ "https://api.com";
+}
+```
+
+---
+
+## storage_keys.dart
+
+Seluruh key storage.
+
+```dart
+accessToken
+refreshToken
+user
+```
+
+---
+
+## asset_paths.dart
+
+Seluruh path asset.
+
+```dart
+logoPng
+emptySvg
+```
+
+---
+
+# core/theme/
+
+## app_theme.dart
+
+ThemeData utama.
+
+Berisi:
+
+- TextTheme
+- ButtonTheme
+- InputTheme
+- CardTheme
+- DialogTheme
+
+---
+
+## app_colors.dart
+
+Seluruh warna.
+
+Contoh:
+
+```dart
+primary
+secondary
+success
+warning
+error
+```
+
+---
+
+# core/network/
+
+Semua urusan API.
+
+## dio_client.dart
+
+Konfigurasi Dio.
+
+Biasanya:
+
+```dart
+BaseOptions
+Timeout
+Headers
+```
+
+---
+
+## network_info.dart
+
+Cek koneksi internet.
+
+Contoh:
+
+```dart
+Future<bool> hasConnection()
+```
+
+---
+
+# interceptors/
+
+## auth_interceptor.dart
+
+Menambahkan token.
+
+```http
+Authorization:
+Bearer token
+```
+
+---
+
+## logger_interceptor.dart
+
+Log request.
+
+Digunakan saat development.
+
+---
+
+## retry_interceptor.dart
+
+Retry request gagal.
+
+Misal:
+
+```text
+3x retry
+```
+
+---
+
+# network/models/
+
+## api_response.dart
+
+Wrapper response API.
+
+Contoh:
+
+```dart
+class ApiResponse<T> {
+ final bool success;
+ final T? data;
+}
+```
+
+---
+
+# core/storage/
+
+Abstraksi penyimpanan lokal.
+
+## secure_storage.dart
+
+Untuk:
+
+- Access Token
+- Refresh Token
+
+Karena terenkripsi.
+
+---
+
+## shared_preferences_storage.dart
+
+Untuk:
+
+- Theme
+- Locale
+- Setting ringan
+
+---
+
+## hive_storage.dart
+
+Untuk:
+
+- Cache data
+- Offline mode
+
+---
+
+# core/services/
+
+Service lintas fitur.
+
+## biometric_service.dart
+
+Fingerprint.
+
+Contoh:
+
+```dart
+authenticate()
+```
+
+---
+
+## location_service.dart
+
+GPS.
+
+Contoh:
+
+```dart
+getCurrentLocation()
+```
+
+---
+
+## notification_service.dart
+
+Push notification.
+
+Biasanya:
+
+- FCM
+- Local notification
+
+---
+
+## camera_service.dart
+
+Akses kamera.
+
+---
+
+## image_picker_service.dart
+
+Pilih gambar.
+
+---
+
+## file_picker_service.dart
+
+Pilih dokumen.
+
+PDF, DOCX, XLSX.
+
+---
+
+# core/errors/
+
+Error handling.
+
+## failures.dart
+
+Representasi error domain.
+
+Contoh:
+
+```dart
+ServerFailure
+NetworkFailure
+ValidationFailure
+UnauthorizedFailure
+```
+
+---
+
+## exceptions.dart
+
+Error teknis.
+
+Contoh:
+
+```dart
+ServerException
+CacheException
+```
+
+---
+
+## error_mapper.dart
+
+Konversi:
+
+```text
+DioException
+     ↓
+NetworkFailure
+```
+
+---
+
+# core/usecases/
+
+## usecase.dart
+
+Base usecase.
+
+Contoh:
+
+```dart
+abstract class UseCase<T,P> {
+ Future<T> call(P params);
+}
+```
+
+Semua usecase mewarisi class ini.
+
+---
+
+# core/extensions/
+
+## context_extension.dart
+
+Contoh:
+
+```dart
+context.theme
+context.colorScheme
+```
+
+---
+
+## string_extension.dart
+
+Contoh:
+
+```dart
+"rian".capitalize()
+```
+
+---
+
+## date_extension.dart
+
+Contoh:
+
+```dart
+date.toIndonesiaDate()
+```
+
+---
+
+## currency_extension.dart
+
+Contoh:
+
+```dart
+10000.toRupiah()
+```
+
+---
+
+# core/utils/
+
+Helper tanpa state.
+
+## validators.dart
+
+Validasi.
+
+Contoh:
+
+```dart
+validateEmail()
+validatePassword()
+```
+
+---
+
+## formatter.dart
+
+Format text.
+
+---
+
+## logger.dart
+
+Log aplikasi.
+
+---
+
+## helpers.dart
+
+Fungsi utilitas kecil.
+
+---
+
+## debounce.dart
+
+Mengurangi request berulang.
+
+Cocok untuk search.
+
+---
+
+# core/widgets/
+
+Reusable widget global.
+
+## app_button.dart
+
+Button standar.
+
+---
+
+## app_text_field.dart
+
+Input standar.
+
+---
+
+## loading_widget.dart
+
+Widget loading.
+
+---
+
+## empty_widget.dart
+
+Widget data kosong.
+
+---
+
+## error_state_widget.dart
+
+Widget error.
+
+---
+
+# core/di/
+
+## dependency_injection.dart
+
+Registrasi dependency.
+
+Contoh:
+
+```dart
+dioProvider
+storageProvider
+networkProvider
+```
+
+---
+
+# 5. Folder features/
+
+Folder domain bisnis.
+
+Contoh:
+
+```text
+auth
+employee
+attendance
+profile
+leave
+notification
+dashboard
+announcement
+```
+
+Setiap feature:
+
+```text
+feature/
+├── presentation/
+├── domain/
+└── data/
+```
+
+---
+
+# presentation/
+
+Layer UI.
+
+Boleh mengetahui:
+
+- Flutter
+- Riverpod
+- GoRouter
+
+## pages/
+
+Screen.
+
+Contoh:
+
+```text
+login_page.dart
+employee_page.dart
+```
+
+---
+
+## widgets/
+
+Widget khusus feature.
+
+Contoh:
+
+```text
+employee_card.dart
+login_form.dart
+```
+
+---
+
+## providers/
+
+Riverpod.
+
+Contoh:
+
+```text
+auth_provider.dart
+employee_provider.dart
+```
+
+---
+
+## states/
+
+State UI.
+
+Contoh:
+
+```dart
+EmployeeFormState
+```
+
+---
+
+# domain/
+
+Pure business layer.
+
+Tidak tahu:
+
+- Flutter
+- Riverpod
+- Dio
+- JSON
+
+## entities/
+
+Objek bisnis.
+
+Contoh:
+
+```dart
+User
+Employee
+Attendance
+```
+
+---
+
+## repositories/
+
+Kontrak.
+
+Contoh:
+
+```dart
+abstract class EmployeeRepository
+```
+
+---
+
+## usecases/
+
+Business rule.
+
+Contoh:
+
+```text
+GetEmployeesUseCase
+CreateEmployeeUseCase
+DeleteEmployeeUseCase
+```
+
+---
+
+# data/
+
+Implementasi teknis.
+
+## datasources/
+
+Sumber data.
+
+Contoh:
+
+```text
+RemoteDatasource
+LocalDatasource
+```
+
+---
+
+## models/
+
+DTO dan model JSON.
+
+Contoh:
+
+```text
+UserModel
+EmployeeModel
+```
+
+Biasanya menggunakan:
+
+- Freezed
+- Json Serializable
+
+---
+
+## repositories/
+
+Implementasi repository.
+
+Contoh:
+
+```dart
+EmployeeRepositoryImpl
+```
+
+---
+
+# Contoh Detail Feature Auth
+
+```text
+auth/
+├── presentation/
+│   ├── pages/
+│   │   ├── login_page.dart
+│   │   ├── register_page.dart
+│   │   └── forgot_password_page.dart
+│   │
+│   ├── widgets/
+│   │   └── login_form.dart
+│   │
+│   ├── providers/
+│   │   └── auth_provider.dart
+│   │
+│   └── states/
+│       └── auth_state.dart
+│
+├── domain/
+│   ├── entities/
+│   │   └── user.dart
+│   │
+│   ├── repositories/
+│   │   └── auth_repository.dart
+│   │
+│   └── usecases/
+│       ├── login_usecase.dart
+│       ├── logout_usecase.dart
+│       └── register_usecase.dart
+│
+└── data/
+    ├── datasources/
+    │   ├── auth_remote_datasource.dart
+    │   └── auth_local_datasource.dart
+    │
+    ├── models/
+    │   ├── user_model.dart
+    │   └── login_response.dart
+    │
+    └── repositories/
+        └── auth_repository_impl.dart
+```
+
+---
+
+# l10n/
+
+Internationalization.
+
+Contoh:
+
+```text
+app_id.arb
+app_en.arb
+```
+
+Digunakan untuk multi bahasa.
+
+---
+
+# assets/
+
+## images/
+
+PNG JPG WEBP
+
+## icons/
+
+SVG dan Icon
+
+## fonts/
+
+Custom font
+
+## animations/
+
+Lottie dan Rive
+
+---
+
+# Kesimpulan
+
+Jika file berkaitan dengan satu domain bisnis:
+
+```text
+features/
+```
+
+Jika digunakan banyak feature:
+
+```text
+core/
+```
+
+Jika mengatur aplikasi secara global:
+
+```text
+app/
+```
+
+Dengan aturan ini proyek tetap bersih walaupun berkembang menjadi ratusan file.

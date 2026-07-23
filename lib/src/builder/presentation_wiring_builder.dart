@@ -1,65 +1,84 @@
+import '../core/data_naming.dart';
 import '../core/string_extensions.dart';
+import '../core/usecase_naming.dart';
 
 /// Membangun provider wiring di lapisan **Presentation** untuk chain:
-/// `apiClientProvider` → `authRepositoryProvider` → `loginUsecaseProvider`
-///
-/// Domain & Data tetap pure Dart — file ini hanya composition/wiring.
+/// `apiClientProvider` → `authDatasourceProvider` → `authRepositoryProvider` → `{method}UsecaseProvider`
 class PresentationWiringBuilder {
-  /// Provider repository per fitur, mis. `auth_repository_provider.dart`.
-  String buildRepositoryProvider(String repositoryName) {
-    final repoSnake = repositoryName.toSnakeCase();
-    final implClassName = '${repositoryName}Impl';
-    final implFileName = '${repoSnake}_impl.dart';
-    final providerFileName =
-        '${_repositoryProviderBaseName(repositoryName)}_repository_provider.dart';
+  String buildDatasourceProvider({
+    required String repositoryName,
+  }) {
+    final dsClass = datasourceClassName(repositoryName);
+    final dsImplClass = datasourceImplClassName(repositoryName);
+    final dsFile = datasourceFileName(repositoryName);
+    final providerFileName = datasourceProviderFileName(repositoryName);
     final providerFunctionName =
-        _repositoryProviderFunctionName(repositoryName);
+        datasourceProviderFunctionName(repositoryName);
 
     return '''import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../core/network/api_client_provider.dart';
-import '../../../data/repository_impl/$implFileName';
-import '../../../domain/repository/$repoSnake.dart';
+import '../../../../core/network/api_client_provider.dart';
+import '../../data/datasources/$dsFile';
 
 part '${providerFileName.replaceAll('.dart', '.g.dart')}';
 
-/// Wiring [$repositoryName] ke implementasi data layer.
-/// Domain/Data tetap pure Dart — provider hanya composition.
 @Riverpod(keepAlive: true)
-$repositoryName $providerFunctionName(Ref ref) {
-  return $implClassName(
-    apiClient: ref.watch(apiClientProvider),
-  );
+$dsClass $providerFunctionName(Ref ref) {
+  return $dsImplClass(ref.watch(apiClientProvider));
 }
 ''';
   }
 
-  /// Provider usecase per page, mis. `login_usecase_provider.dart`.
-  String buildUsecaseProvider({
-    required String pageName,
+  String buildRepositoryProvider({
     required String repositoryName,
-    required String usecaseFolderName,
   }) {
-    final usecaseClassName = '${pageName.toPascalCase()}Usecase';
-    final usecaseFileName = '${pageName.toSnakeCase()}_usecase.dart';
-    final providerBaseName = pageName.toCamelCase();
-    final providerFileName = '${pageName.toSnakeCase()}_usecase_provider.dart';
-    final repositoryProviderImport =
-        '${_repositoryProviderBaseName(repositoryName)}_repository_provider.dart';
-    final repositoryProviderName =
-        '${_repositoryProviderFunctionName(repositoryName)}Provider';
+    final repoSnake = repositoryName.toSnakeCase();
+    final implClassName = repositoryImplClassName(repositoryName);
+    final implFileName = repositoryImplFileName(repositoryName);
+    final providerFileName =
+        '${repositoryProviderBaseName(repositoryName)}_repository_provider.dart';
+    final providerFunctionName = repositoryProviderFunctionName(repositoryName);
+    final dsProviderFile = datasourceProviderFileName(repositoryName);
+    final dsProviderName = '${datasourceProviderFunctionName(repositoryName)}Provider';
 
     return '''import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../domain/usecase/$usecaseFolderName/$usecaseFileName';
+import '../../data/repositories/$implFileName';
+import '../../domain/repositories/$repoSnake.dart';
+import '$dsProviderFile';
+
+part '${providerFileName.replaceAll('.dart', '.g.dart')}';
+
+@Riverpod(keepAlive: true)
+$repositoryName $providerFunctionName(Ref ref) {
+  return $implClassName(ref.watch($dsProviderName));
+}
+''';
+  }
+
+  String buildUsecaseProvider({
+    required String pageName,
+    required String repositoryName,
+  }) {
+    final usecaseClass = usecaseClassName(pageName);
+    final usecaseFile = usecaseFileName(pageName);
+    final providerBaseName = pageName.toCamelCase();
+    final providerFileName = '${pageName.toSnakeCase()}_usecase_provider.dart';
+    final repositoryProviderImport =
+        '${repositoryProviderBaseName(repositoryName)}_repository_provider.dart';
+    final repositoryProviderName =
+        '${repositoryProviderFunctionName(repositoryName)}Provider';
+
+    return '''import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+import '../../domain/usecases/$usecaseFile';
 import '$repositoryProviderImport';
 
 part '${providerFileName.replaceAll('.dart', '.g.dart')}';
 
-/// Wiring [$usecaseClassName] ke [$repositoryName].
 @riverpod
-$usecaseClassName ${providerBaseName}Usecase(Ref ref) {
-  return $usecaseClassName(
+$usecaseClass ${providerBaseName}Usecase(Ref ref) {
+  return $usecaseClass(
     ref.watch($repositoryProviderName),
   );
 }
@@ -67,29 +86,14 @@ $usecaseClassName ${providerBaseName}Usecase(Ref ref) {
   }
 
   static String repositoryProviderFileName(String repositoryName) {
-    return '${_repositoryProviderBaseName(repositoryName)}_repository_provider.dart';
+    return '${repositoryProviderBaseName(repositoryName)}_repository_provider.dart';
+  }
+
+  static String datasourceProviderFileNameFor(String repositoryName) {
+    return datasourceProviderFileName(repositoryName);
   }
 
   static String usecaseProviderFileName(String pageName) {
     return '${pageName.toSnakeCase()}_usecase_provider.dart';
-  }
-
-  static String usecaseFolderNameFromRepository(String repositoryName) {
-    final baseName =
-        repositoryName.replaceAll(RegExp(r'Repository$', caseSensitive: false), '');
-    return '${baseName.toSnakeCase()}_usecase';
-  }
-
-  static String _repositoryProviderBaseName(String repositoryName) {
-    final baseName =
-        repositoryName.replaceAll(RegExp(r'Repository$', caseSensitive: false), '');
-    return baseName.toSnakeCase();
-  }
-
-  static String _repositoryProviderFunctionName(String repositoryName) {
-    if (repositoryName.isEmpty) {
-      return repositoryName;
-    }
-    return repositoryName[0].toLowerCase() + repositoryName.substring(1);
   }
 }

@@ -1,14 +1,7 @@
 import '../core/string_extensions.dart';
 
 /// Membangun scaffolding lapisan Presentation berbasis **Riverpod 3.x**.
-///
-/// Untuk setiap page menghasilkan 3 file:
-/// - `states/<page>_state.dart`     → state immutable (`@freezed`)
-/// - `providers/<page>_provider.dart` → Notifier (`@riverpod`)
-/// - `views/<page>_view.dart`       → `ConsumerWidget`
 class RiverpodPresentationBuilder {
-  /// State immutable untuk page. Dipisah dari Notifier agar mudah di-test
-  /// dan konsisten dengan pola Clean Architecture.
   String buildState(String pageName) {
     final stateName = '${pageName.toPascalCase()}State';
     final stateFileName = '${pageName.toSnakeCase()}_state.dart';
@@ -21,13 +14,11 @@ abstract class $stateName with _\$$stateName {
   const factory $stateName({
     @Default(false) bool isLoading,
     String? errorMessage,
-  }) = _${stateName};
+  }) = _$stateName;
 }
 ''';
   }
 
-  /// Notifier berbasis code-generation `@riverpod`.
-  /// Provider yang dihasilkan generator: `${pageName}Provider`.
   String buildProvider(String pageName) {
     final notifierName = pageName.toPascalCase();
     final stateName = '${pageName.toPascalCase()}State';
@@ -46,16 +37,14 @@ class $notifierName extends _\$$notifierName {
   $stateName build() => const $stateName();
 
   // TODO: Implement $notifierName logic
-  // Contoh mengubah state:
-  // void setLoading(bool value) => state = state.copyWith(isLoading: value);
 }
 ''';
   }
 
-  /// View berbasis [ConsumerWidget]. Reaktif via `ref.watch`.
-  String buildView(String pageName) {
-    final viewName = '${pageName.toPascalCase()}View';
-    final providerName = '${pageName.toCamelCase()}Provider';
+  String buildPage(String pageName) {
+    final pageClassName = '${pageName.toPascalCase()}Page';
+    final pageCamel = pageName.toCamelCase();
+    final providerName = '${pageCamel}Provider';
     final providerFileName = '${pageName.toSnakeCase()}_provider.dart';
 
     return '''import 'package:flutter/material.dart';
@@ -63,25 +52,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/$providerFileName';
 
-class $viewName extends ConsumerWidget {
-  const $viewName({super.key});
+class $pageClassName extends ConsumerWidget {
+  const $pageClassName({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final state = ref.watch($providerName);
-    // final notifier = ref.read($providerName.notifier);
+    final ${pageCamel}State = ref.watch($providerName);
+    final ${pageCamel}Notifier = ref.read($providerName.notifier);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('$viewName'),
+        title: const Text('$pageClassName'),
         centerTitle: true,
       ),
       body: Center(
-        child: state.isLoading
+        child: ${pageCamel}State.isLoading
             ? const CircularProgressIndicator()
             : Text(
-                '$viewName is working',
+                '$pageClassName is working',
                 style: theme.textTheme.titleLarge,
               ),
       ),

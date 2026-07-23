@@ -1,5 +1,6 @@
-import '../core/import_resolver.dart';
+import '../core/usecase_naming.dart';
 import '../parser/repository_parser.dart';
+import '../core/import_resolver.dart';
 import '../core/string_extensions.dart';
 
 class UsecaseBuilder {
@@ -10,7 +11,7 @@ class UsecaseBuilder {
     required String usecaseFilePath,
   }) {
     final buffer = StringBuffer();
-    final usecaseName = '${method.name.toPascalCase()}Usecase';
+    final usecaseName = usecaseClassName(method.name);
 
     final imports = ImportResolver.resolve(
       repository: repository,
@@ -24,7 +25,7 @@ class UsecaseBuilder {
     }
 
     final repoFileName = '${repository.name.toSnakeCase()}.dart';
-    buffer.writeln("import '../../repository/$repoFileName';");
+    buffer.writeln("import '../repositories/$repoFileName';");
     buffer.writeln();
 
     buffer.writeln("class $usecaseName {");

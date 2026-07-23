@@ -5,10 +5,28 @@ import 'package:flutter_generator/src/builder/usecase_builder.dart';
 import 'package:flutter_generator/src/core/presentation_wiring_injector.dart';
 import 'package:flutter_generator/src/core/string_extensions.dart';
 import 'package:flutter_generator/src/core/import_resolver.dart';
+import 'package:flutter_generator/src/core/feature_paths.dart';
+import 'package:flutter_generator/src/core/usecase_naming.dart' as naming;
 
 void main(List<String> args) {
   print('=== Flutter Usecase Generator ===');
-  stdout.write('Masukkan nama Repository (contoh: AuthRepository): ');
+  print(
+    'ℹ️ Format: fitur/page = snake_case (reset_password), repository = PascalCase (AuthRepository)',
+  );
+
+  stdout.write(
+    'Masukkan nama Fitur (snake_case, contoh: auth atau user_profile — jangan userProfile/UserProfile): ',
+  );
+  final featureInput = stdin.readLineSync()?.trim();
+  if (featureInput == null || featureInput.isEmpty) {
+    print('❌ Nama Fitur tidak boleh kosong.');
+    return;
+  }
+  final featureName = featureInput.toSnakeCase();
+
+  stdout.write(
+    'Masukkan nama Repository (PascalCase, contoh: AuthRepository atau UserProfileRepository — jangan auth_repository): ',
+  );
   final repoName = stdin.readLineSync()?.trim();
 
   if (repoName == null || repoName.isEmpty) {
@@ -18,11 +36,15 @@ void main(List<String> args) {
 
   final currentDir = Directory.current.path;
   final repoFileName = '${repoName.toSnakeCase()}.dart';
-  final repoFilePath = '$currentDir/lib/domain/repository/$repoFileName';
+  final repoFilePath =
+      '$currentDir/${FeaturePaths.domainRepositories(featureName)}/$repoFileName';
 
   final file = File(repoFilePath);
   if (!file.existsSync()) {
     print('❌ File Repository tidak ditemukan di: $repoFilePath');
+    print(
+      'ℹ️ Pastikan sudah menjalankan gen_init dan file repository ada di path feature-first.',
+    );
     return;
   }
 
@@ -31,15 +53,16 @@ void main(List<String> args) {
     final parsedRepo = parser.parse(repoFilePath, repoName);
 
     if (parsedRepo.methods.isEmpty) {
-      print('⚠️ Tidak ada fungsi/method yang ditemukan di dalam ${parsedRepo.name}.');
+      print(
+        '⚠️ Tidak ada fungsi/method yang ditemukan di dalam ${parsedRepo.name}.',
+      );
       return;
     }
 
     final builder = UsecaseBuilder();
-
-    final baseName = repoName.replaceAll(RegExp(r'Repository$', caseSensitive: false), '');
-    final usecaseDirName = '${baseName.toSnakeCase()}_usecase';
-    final outputDir = Directory('$currentDir/lib/domain/usecase/$usecaseDirName');
+    final outputDir = Directory(
+      '$currentDir/${FeaturePaths.domainUsecases(featureName)}',
+    );
 
     if (!outputDir.existsSync()) {
       outputDir.createSync(recursive: true);
@@ -48,9 +71,9 @@ void main(List<String> args) {
     final expectedFiles = <String>{};
 
     for (var method in parsedRepo.methods) {
-      final usecaseFileName = '${method.name.toSnakeCase()}_usecase.dart';
-      expectedFiles.add(usecaseFileName);
-      final usecaseFilePath = '${outputDir.path}/$usecaseFileName';
+      final fileName = naming.usecaseFileName(method.name);
+      expectedFiles.add(fileName);
+      final usecaseFilePath = '${outputDir.path}/$fileName';
 
       final usecaseCode = builder.build(
         parsedRepo,
@@ -82,23 +105,20 @@ void main(List<String> args) {
     _removeStaleUsecases(outputDir, expectedFiles);
 
     stdout.write(
-      '\nInject usecase provider ke presentation layer (auto-wiring)? (y/n): ',
+      '\nInject usecase provider ke presentation layer (auto-wiring)? (y/n, contoh: y): ',
     );
     final injectInput = stdin.readLineSync()?.trim().toLowerCase();
     if (injectInput == 'y') {
-      stdout.write('Masukkan nama Fitur (contoh: auth): ');
-      final featureInput = stdin.readLineSync()?.trim();
-      stdout.write('Masukkan nama Page (contoh: login): ');
+      stdout.write(
+        'Masukkan nama Page (snake_case, contoh: login atau reset_password — jangan resetPassword/ResetPassword): ',
+      );
       final pageInput = stdin.readLineSync()?.trim();
 
-      if (featureInput == null ||
-          featureInput.isEmpty ||
-          pageInput == null ||
-          pageInput.isEmpty) {
-        print('❌ Nama Fitur dan Page wajib diisi untuk auto-wiring.');
+      if (pageInput == null || pageInput.isEmpty) {
+        print('❌ Nama Page wajib diisi untuk auto-wiring.');
       } else {
         PresentationWiringInjector(currentDir).inject(
-          featureName: featureInput,
+          featureName: featureName,
           pageName: pageInput,
           repositoryName: repoName,
           methods: parsedRepo.methods,

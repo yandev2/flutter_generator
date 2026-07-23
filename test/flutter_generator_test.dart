@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_generator/flutter_generator.dart';
+import 'package:flutter_generator/src/core/usecase_naming.dart';
 
 void main() {
   group('StringCasingExtension', () {
@@ -17,6 +18,16 @@ void main() {
     test('toSnakeCase converts PascalCase correctly', () {
       expect('UserName'.toSnakeCase(), 'user_name');
       expect('AuthRepository'.toSnakeCase(), 'auth_repository');
+    });
+
+    test('toPascalCase splits camelCase boundaries', () {
+      expect('userDashboard'.toPascalCase(), 'UserDashboard');
+      expect('getHistoryTransaction'.toPascalCase(), 'GetHistoryTransaction');
+    });
+
+    test('usecaseClassName produces correct class names', () {
+      expect(usecaseClassName('user_dashboard'), 'UserDashboardUsecase');
+      expect(usecaseClassName('login'), 'LoginUsecase');
     });
   });
 

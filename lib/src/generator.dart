@@ -6,10 +6,11 @@ import 'builder/entity_builder.dart';
 import 'builder/model_builder.dart';
 import 'core/build_runner_reminder.dart';
 import 'core/string_extensions.dart';
+import 'core/feature_paths.dart';
 import 'parser/json_parser.dart';
 
 class Generator {
-  void generate(String jsonString, String rootClassName) {
+  void generate(String jsonString, String rootClassName, String featureName) {
     try {
       final jsonMap = json.decode(jsonString);
       if (jsonMap is! Map<String, dynamic>) {
@@ -23,8 +24,12 @@ class Generator {
       final modelBuilder = ModelBuilder();
 
       final currentDir = Directory.current.path;
-      final entityDir = Directory('$currentDir/lib/domain/entity');
-      final modelDir = Directory('$currentDir/lib/data/model');
+      final entityDir = Directory(
+        '$currentDir/${FeaturePaths.domainEntities(featureName)}',
+      );
+      final modelDir = Directory(
+        '$currentDir/${FeaturePaths.dataModels(featureName)}',
+      );
 
       if (!entityDir.existsSync()) {
         entityDir.createSync(recursive: true);

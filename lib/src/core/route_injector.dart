@@ -4,9 +4,7 @@ import 'string_extensions.dart';
 
 /// Meng-inject route baru ke setup **go_router** (Riverpod).
 ///
-/// Mengelola dua file di dalam [routeDir] (mis. `lib/core/router`):
-/// - `route_paths.dart` → konstanta path (`RoutePaths`)
-/// - `app_router.dart`  → daftar `GoRoute` di dalam provider `appRouter`
+/// Mengelola route di [routeDir] (mis. `lib/app/router`).
 class RouteInjector {
   final String routeDir;
 
@@ -82,7 +80,7 @@ GoRouter appRouter(Ref ref) {
   void _injectGoRoute(File file, String featureName, String pageName) {
     var content = file.readAsStringSync();
     final camelPageName = pageName.toCamelCase();
-    final viewName = '${pageName.toPascalCase()}View';
+    final pageClassName = '${pageName.toPascalCase()}Page';
 
     if (_goRouteExists(content, camelPageName)) {
       print('⚠️ GoRoute untuk $camelPageName sudah ada. Skip inject.');
@@ -92,15 +90,15 @@ GoRouter appRouter(Ref ref) {
     final featureDir = featureName.toSnakeCase();
     final pageSnake = pageName.toSnakeCase();
 
-    final viewImport =
-        "import '../../presentation/$featureDir/views/${pageSnake}_view.dart';";
+    final pageImport =
+        "import '../../features/$featureDir/presentation/pages/${pageSnake}_page.dart';";
 
-    content = _appendImportsIfMissing(content, [viewImport]);
+    content = _appendImportsIfMissing(content, [pageImport]);
 
     final goRouteString = '''
       GoRoute(
         path: RoutePaths.$camelPageName,
-        builder: (context, state) => const $viewName(),
+        builder: (context, state) => const $pageClassName(),
       ),''';
 
     final closingBracketIndex = _findRoutesListClosingIndex(content);

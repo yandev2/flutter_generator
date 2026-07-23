@@ -1,22 +1,19 @@
 extension StringCasingExtension on String {
   String toCamelCase() {
-    if (isEmpty) return this;
-    final words = split(RegExp(r'[_\-\s]'));
-    if (words.isEmpty) return this;
-    
-    final firstWord = words.first.toLowerCase();
-    final restWords = words.skip(1).map((w) {
-      if (w.isEmpty) return '';
-      return w.substring(0, 1).toUpperCase() + w.substring(1).toLowerCase();
-    }).join('');
-    
-    return firstWord + restWords;
+    final pascal = toPascalCase();
+    if (pascal.isEmpty) return this;
+    return pascal[0].toLowerCase() + pascal.substring(1);
   }
 
   String toPascalCase() {
-    final camelCase = toCamelCase();
-    if (camelCase.isEmpty) return this;
-    return camelCase.substring(0, 1).toUpperCase() + camelCase.substring(1);
+    if (isEmpty) return this;
+
+    final words = toSnakeCase().split('_').where((word) => word.isNotEmpty);
+    return words
+        .map(
+          (word) => word[0].toUpperCase() + word.substring(1).toLowerCase(),
+        )
+        .join();
   }
 
   String toSnakeCase() {

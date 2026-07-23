@@ -22,15 +22,19 @@ void main() {
   });
 
   String writeRepository(String fileName, String content) {
-    final repoDir = Directory('${tempDir.path}/lib/domain/repository');
+    final repoDir = Directory(
+      '${tempDir.path}/lib/features/auth/domain/repositories',
+    );
     repoDir.createSync(recursive: true);
     final file = File('${repoDir.path}/$fileName');
     file.writeAsStringSync(content);
     return file.path;
   }
 
-  String usecasePath(String folder, String fileName) {
-    final usecaseDir = Directory('${tempDir.path}/lib/domain/usecase/$folder');
+  String usecasePath(String fileName) {
+    final usecaseDir = Directory(
+      '${tempDir.path}/lib/features/auth/domain/usecases',
+    );
     usecaseDir.createSync(recursive: true);
     return '${usecaseDir.path}/$fileName';
   }
@@ -49,11 +53,11 @@ void main() {
         'auth_repository.dart',
         '''
 import 'package:dartz/dartz.dart';
-import '../../core/error/failures.dart';
-import '../entity/request/auth_entity.dart';
-import '../entity/request/register_request_entity.dart';
-import '../entity/response/register_response_entity.dart';
-import '../entity/response/user_entity.dart';
+import '../../../../core/errors/failures.dart';
+import '../entities/request/auth_entity.dart';
+import '../entities/request/register_request_entity.dart';
+import '../entities/response/register_response_entity.dart';
+import '../entities/response/user_entity.dart';
 
 abstract class AuthRepository {
   Future<Either<Failure, UserEntity>> autoLogin(String token);
@@ -85,8 +89,8 @@ abstract class AuthRepository {
         'zakat_repository.dart',
         '''
 import 'package:dartz/dartz.dart';
-import '../../core/error/failures.dart';
-import '../entity/response/inventory_item_entity.dart';
+import '../../../../core/errors/failures.dart';
+import '../entities/response/inventory_item_entity.dart';
 
 abstract class ZakatRepository {
   Future<Either<Failure, List<InventoryItemEntity>>> getInventoryItems();
@@ -107,11 +111,11 @@ abstract class ZakatRepository {
         'auth_repository.dart',
         '''
 import 'package:dartz/dartz.dart';
-import '../../core/error/failures.dart';
-import '../entity/request/auth_entity.dart';
-import '../entity/request/register_request_entity.dart';
-import '../entity/response/register_response_entity.dart';
-import '../entity/response/user_entity.dart';
+import '../../../../core/errors/failures.dart';
+import '../entities/request/auth_entity.dart';
+import '../entities/request/register_request_entity.dart';
+import '../entities/response/register_response_entity.dart';
+import '../entities/response/user_entity.dart';
 
 abstract class AuthRepository {
   Future<Either<Failure, UserEntity>> autoLogin(String token);
@@ -123,8 +127,7 @@ abstract class AuthRepository {
 
       final parsed = parser.parse(repoPath, 'AuthRepository');
       final login = parsed.methods.firstWhere((m) => m.name == 'login');
-      final usecaseFilePath =
-          usecasePath('auth_usecase', 'login_usecase.dart');
+      final usecaseFilePath = usecasePath('login_usecase.dart');
 
       final code = builder.build(
         parsed,
@@ -135,9 +138,9 @@ abstract class AuthRepository {
 
       final imports = extractImports(code);
       expect(imports, [
-        "import '../../entity/request/auth_entity.dart';",
-        "import '../../entity/response/user_entity.dart';",
-        "import '../../repository/auth_repository.dart';",
+        "import '../entities/request/auth_entity.dart';",
+        "import '../entities/response/user_entity.dart';",
+        "import '../repositories/auth_repository.dart';",
       ]);
       expect(code.contains('dartz'), isFalse);
       expect(code.contains('failures.dart'), isFalse);
@@ -149,9 +152,9 @@ abstract class AuthRepository {
         'auth_repository.dart',
         '''
 import 'package:dartz/dartz.dart';
-import '../../core/error/failures.dart';
-import '../entity/request/auth_entity.dart';
-import '../entity/response/user_entity.dart';
+import '../../../../core/errors/failures.dart';
+import '../entities/request/auth_entity.dart';
+import '../entities/response/user_entity.dart';
 
 abstract class AuthRepository {
   Future<Either<Failure, UserEntity>> autoLogin(String token);
@@ -162,8 +165,7 @@ abstract class AuthRepository {
 
       final parsed = parser.parse(repoPath, 'AuthRepository');
       final autoLogin = parsed.methods.firstWhere((m) => m.name == 'autoLogin');
-      final usecaseFilePath =
-          usecasePath('auth_usecase', 'auto_login_usecase.dart');
+      final usecaseFilePath = usecasePath('auto_login_usecase.dart');
 
       final code = builder.build(
         parsed,
@@ -174,8 +176,8 @@ abstract class AuthRepository {
 
       final imports = extractImports(code);
       expect(imports, [
-        "import '../../entity/response/user_entity.dart';",
-        "import '../../repository/auth_repository.dart';",
+        "import '../entities/response/user_entity.dart';",
+        "import '../repositories/auth_repository.dart';",
       ]);
     });
 
@@ -184,8 +186,8 @@ abstract class AuthRepository {
         'zakat_repository.dart',
         '''
 import 'package:dartz/dartz.dart';
-import '../../core/error/failures.dart';
-import '../entity/response/inventory_item_entity.dart';
+import '../../../../core/errors/failures.dart';
+import '../entities/response/inventory_item_entity.dart';
 
 abstract class ZakatRepository {
   Future<Either<Failure, List<InventoryItemEntity>>> getInventoryItems();
@@ -196,7 +198,7 @@ abstract class ZakatRepository {
       final parsed = parser.parse(repoPath, 'ZakatRepository');
       final method = parsed.methods.single;
       final usecaseFilePath =
-          usecasePath('zakat_usecase', 'get_inventory_items_usecase.dart');
+          usecasePath('get_inventory_items_usecase.dart');
 
       final code = builder.build(
         parsed,
@@ -207,8 +209,8 @@ abstract class ZakatRepository {
 
       final imports = extractImports(code);
       expect(imports, [
-        "import '../../entity/response/inventory_item_entity.dart';",
-        "import '../../repository/zakat_repository.dart';",
+        "import '../entities/response/inventory_item_entity.dart';",
+        "import '../repositories/zakat_repository.dart';",
       ]);
     });
 
@@ -217,10 +219,10 @@ abstract class ZakatRepository {
         'muzzaki_repository.dart',
         '''
 import 'package:dartz/dartz.dart';
-import 'package:simzakat_app/domain/entity/response/muzzaki_transaction_history_entity.dart';
-import '../../core/error/failures.dart';
-import '../entity/paginated_list_entity.dart';
-import '../entity/response/muzzaki_transaction_item_list_entity.dart';
+import 'package:simzakat_app/domain/entities/response/muzzaki_transaction_history_entity.dart';
+import '../../../../core/errors/failures.dart';
+import '../entities/paginated_list_entity.dart';
+import '../entities/response/muzzaki_transaction_item_list_entity.dart';
 
 abstract class MuzzakiRepository {
   Future<Either<Failure, PaginatedListEntity<MuzzakiTransactionItemListEntity>>>
@@ -233,10 +235,8 @@ abstract class MuzzakiRepository {
       final parsed = parser.parse(repoPath, 'MuzzakiRepository');
       final method =
           parsed.methods.firstWhere((m) => m.name == 'getHistoryTransaction');
-      final usecaseFilePath = usecasePath(
-        'muzzaki_usecase',
-        'get_history_transaction_usecase.dart',
-      );
+      final usecaseFilePath =
+          usecasePath('get_history_transaction_usecase.dart');
 
       final code = builder.build(
         parsed,
@@ -247,9 +247,9 @@ abstract class MuzzakiRepository {
 
       final imports = extractImports(code);
       expect(imports, [
-        "import '../../entity/paginated_list_entity.dart';",
-        "import '../../entity/response/muzzaki_transaction_item_list_entity.dart';",
-        "import '../../repository/muzzaki_repository.dart';",
+        "import '../entities/paginated_list_entity.dart';",
+        "import '../entities/response/muzzaki_transaction_item_list_entity.dart';",
+        "import '../repositories/muzzaki_repository.dart';",
       ]);
       expect(code.contains('muzzaki_transaction_history_entity'), isFalse);
       expect(code.contains('dartz'), isFalse);
@@ -261,8 +261,8 @@ abstract class MuzzakiRepository {
         'muzzaki_repository.dart',
         '''
 import 'package:dartz/dartz.dart';
-import 'package:simzakat_app/domain/entity/response/muzzaki_transaction_history_entity.dart';
-import '../../core/error/failures.dart';
+import 'package:simzakat_app/domain/entities/response/muzzaki_transaction_history_entity.dart';
+import '../../../../core/errors/failures.dart';
 
 abstract class MuzzakiRepository {
   Future<Either<Failure, MuzzakiTransactionHistoryEntity>> detailTransaction(int transactionId);
@@ -274,7 +274,7 @@ abstract class MuzzakiRepository {
       final method =
           parsed.methods.firstWhere((m) => m.name == 'detailTransaction');
       final usecaseFilePath =
-          usecasePath('muzzaki_usecase', 'detail_transaction_usecase.dart');
+          usecasePath('detail_transaction_usecase.dart');
 
       final code = builder.build(
         parsed,
@@ -285,8 +285,8 @@ abstract class MuzzakiRepository {
 
       final imports = extractImports(code);
       expect(imports, [
-        "import 'package:simzakat_app/domain/entity/response/muzzaki_transaction_history_entity.dart';",
-        "import '../../repository/muzzaki_repository.dart';",
+        "import 'package:simzakat_app/domain/entities/response/muzzaki_transaction_history_entity.dart';",
+        "import '../repositories/muzzaki_repository.dart';",
       ]);
     });
 
@@ -295,10 +295,10 @@ abstract class MuzzakiRepository {
         'disbursement_repository.dart',
         '''
 import 'package:dartz/dartz.dart';
-import '../../core/error/failures.dart';
-import '../entity/response/disbursement_entity.dart';
-import '../entity/response/disbursement_item_list_entity.dart';
-import '../entity/paginated_list_entity.dart';
+import '../../../../core/errors/failures.dart';
+import '../entities/response/disbursement_entity.dart';
+import '../entities/response/disbursement_item_list_entity.dart';
+import '../entities/paginated_list_entity.dart';
 
 abstract class DisbursementRepository {
   Future<Either<Failure, PaginatedListEntity<DisbursementItemListEntity>>> getDisbursements({
@@ -313,10 +313,8 @@ abstract class DisbursementRepository {
       final parsed = parser.parse(repoPath, 'DisbursementRepository');
       final method =
           parsed.methods.firstWhere((m) => m.name == 'detailDisbursement');
-      final usecaseFilePath = usecasePath(
-        'disbursement_usecase',
-        'detail_disbursement_usecase.dart',
-      );
+      final usecaseFilePath =
+          usecasePath('detail_disbursement_usecase.dart');
 
       final code = builder.build(
         parsed,
@@ -327,8 +325,8 @@ abstract class DisbursementRepository {
 
       final imports = extractImports(code);
       expect(imports, [
-        "import '../../entity/response/disbursement_entity.dart';",
-        "import '../../repository/disbursement_repository.dart';",
+        "import '../entities/response/disbursement_entity.dart';",
+        "import '../repositories/disbursement_repository.dart';",
       ]);
       expect(code.contains("import '../entity/"), isFalse);
       expect(code.contains('failures.dart'), isFalse);
@@ -339,9 +337,9 @@ abstract class DisbursementRepository {
         'payment_repository.dart',
         '''
 import 'package:dartz/dartz.dart';
-import '../../core/error/failures.dart';
-import '../entity/request/payment_request_entity.dart';
-import '../entity/response/payment_response_entity.dart';
+import '../../../../core/errors/failures.dart';
+import '../entities/request/payment_request_entity.dart';
+import '../entities/response/payment_response_entity.dart';
 
 abstract class PaymentRepository {
   Future<Either<Failure, PaymentResponseEntity>> payment(
@@ -357,8 +355,7 @@ abstract class PaymentRepository {
 
       expect(method.parameterCall, 'param, asGuest: asGuest');
 
-      final usecaseFilePath =
-          usecasePath('payment_usecase', 'payment_usecase.dart');
+      final usecaseFilePath = usecasePath('payment_usecase.dart');
       final code = builder.build(
         parsed,
         method,
@@ -377,9 +374,9 @@ abstract class PaymentRepository {
         'muzzaki_repository.dart',
         '''
 import 'package:dartz/dartz.dart';
-import '../../core/error/failures.dart';
-import '../entity/paginated_list_entity.dart';
-import '../entity/response/muzzaki_transaction_item_list_entity.dart';
+import '../../../../core/errors/failures.dart';
+import '../entities/paginated_list_entity.dart';
+import '../entities/response/muzzaki_transaction_item_list_entity.dart';
 
 abstract class MuzzakiRepository {
   Future<Either<Failure, PaginatedListEntity<MuzzakiTransactionItemListEntity>>>

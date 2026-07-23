@@ -241,13 +241,30 @@ lib/
 ├── core/
 │   ├── constants/env_config.dart      → class EnvConfig (baca dari .env)
 │   ├── constants/app_constants.dart   → storage keys, appVersion
+│   ├── constants/asset_paths.dart     → abstract AssetPaths
 │   ├── errors/failures.dart           → class Failure (Freezed)
 │   ├── errors/exceptions.dart
 │   ├── errors/exception_mapper.dart   → ExceptionMapper.toFailure / .guard
+│   ├── storage/
+│   │   ├── shared_preferences_storage.dart → SharedPreferencesStorage + provider
+│   │   └── riverpod_sqflite.dart      → JsonSqFliteStorage (offline persist Riverpod)
+│   ├── services/                      → folder kosong (.gitkeep)
+│   ├── extensions/
+│   │   ├── context_extension.dart
+│   │   ├── string_extension.dart
+│   │   └── color_extension.dart
+│   ├── utils/
+│   │   ├── validators.dart            → email & password
+│   │   └── helpers.dart
+│   ├── widgets/
+│   │   ├── loading_widget.dart
+│   │   └── error_widget.dart          → class AppErrorWidget
 │   ├── navigation/tab_navigation_state.dart
 │   ├── navigation/tab_navigation_provider.dart
 │   ├── network/api_client.dart        → class ApiClient
 │   ├── network/api_client_provider.dart → apiClientProvider
+│   ├── network/network_info.dart      → NetworkInfo + NetworkInfoImpl
+│   ├── network/network_info_provider.dart → networkInfoProvider
 │   └── theme/app_theme.dart, theme_provider.dart → appThemeModeProvider
 └── features/
     ├── auth/
@@ -265,7 +282,7 @@ analysis_options.yaml                  → plugin riverpod_lint
 .gitignore                             → ditambahkan entry `.env` jika belum ada
 ```
 
-**Dependency tambahan di `pubspec.yaml`:** `flutter_dotenv` + asset `.env`.
+**Dependency tambahan di `pubspec.yaml`:** `flutter_dotenv`, `connectivity_plus`, `riverpod_sqflite`, `sqflite`, `path` + asset `.env`.
 
 **Variabel `.env` default:**
 

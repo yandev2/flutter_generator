@@ -78,6 +78,18 @@ void main() {
         InitTemplate.exceptionMapper,
         InitTemplate.authRepository,
         InitTemplate.loginPage,
+        InitTemplate.assetPaths,
+        InitTemplate.sharedPreferencesStorage,
+        InitTemplate.riverpodSqflite,
+        InitTemplate.networkInfo,
+        InitTemplate.networkInfoProvider,
+        InitTemplate.contextExtension,
+        InitTemplate.stringExtension,
+        InitTemplate.colorExtension,
+        InitTemplate.validators,
+        InitTemplate.helpers,
+        InitTemplate.loadingWidget,
+        InitTemplate.errorWidget,
       ];
 
       for (final template in templates) {
@@ -94,6 +106,9 @@ void main() {
         InitTemplate.authProvider,
         InitTemplate.apiClientProvider,
         InitTemplate.sharedPreferencesProvider,
+        InitTemplate.sharedPreferencesStorage,
+        InitTemplate.networkInfoProvider,
+        InitTemplate.riverpodSqflite,
         InitTemplate.appRouter,
         InitTemplate.themeProvider,
         InitTemplate.splashProvider,
@@ -119,6 +134,18 @@ void main() {
         contains('@Riverpod(keepAlive: true)'),
       );
       expect(InitTemplate.themeProvider, contains('@Riverpod(keepAlive: true)'));
+      expect(
+        InitTemplate.sharedPreferencesStorage,
+        contains('@Riverpod(keepAlive: true)'),
+      );
+      expect(
+        InitTemplate.networkInfoProvider,
+        contains('@Riverpod(keepAlive: true)'),
+      );
+      expect(
+        InitTemplate.riverpodSqflite,
+        contains('@Riverpod(keepAlive: true)'),
+      );
     });
 
     test('main delegates to bootstrap', () {
@@ -215,6 +242,35 @@ void main() {
       expect(code, contains('authProvider'));
       expect(code, contains('RoutePaths.login'));
       expect(code, contains('RoutePaths.dashboard'));
+    });
+
+    test('core templates include asset paths and validators', () {
+      expect(InitTemplate.assetPaths, contains('abstract class AssetPaths'));
+      expect(InitTemplate.validators, contains('String? email(String? value)'));
+      expect(InitTemplate.validators, contains('String? password(String? value'));
+    });
+
+    test('riverpod_sqflite template uses JsonSqFliteStorage', () {
+      final code = InitTemplate.riverpodSqflite;
+
+      expect(code, contains("import 'package:riverpod_sqflite/riverpod_sqflite.dart';"));
+      expect(code, contains('JsonSqFliteStorage.open'));
+      expect(code, contains('riverpod.db'));
+    });
+
+    test('network info checks connectivity', () {
+      final code = InitTemplate.networkInfo;
+
+      expect(code, contains('abstract class NetworkInfo'));
+      expect(code, contains('Future<bool> get isConnected'));
+      expect(code, contains('ConnectivityResult.none'));
+    });
+
+    test('app error widget avoids Flutter ErrorWidget name clash', () {
+      final code = InitTemplate.errorWidget;
+
+      expect(code, contains('class AppErrorWidget'));
+      expect(code, isNot(contains('class ErrorWidget extends')));
     });
 
     test('dashboard page uses ConsumerWidget + ref.watch + notifier', () {
@@ -435,6 +491,20 @@ abstract final class InitTemplate {
   static String get exceptionMapper => _read('_exceptionMapperTemplate');
   static String get authRepository => _read('_authRepositoryTemplate');
   static String get loginPage => _read('_loginPageTemplate');
+  static String get assetPaths => _read('_assetPathsTemplate');
+  static String get sharedPreferencesStorage =>
+      _read('_sharedPreferencesStorageTemplate');
+  static String get riverpodSqflite => _read('_riverpodSqfliteTemplate');
+  static String get networkInfo => _read('_networkInfoTemplate');
+  static String get networkInfoProvider =>
+      _read('_networkInfoProviderTemplate');
+  static String get contextExtension => _read('_contextExtensionTemplate');
+  static String get stringExtension => _read('_stringExtensionTemplate');
+  static String get colorExtension => _read('_colorExtensionTemplate');
+  static String get validators => _read('_validatorsTemplate');
+  static String get helpers => _read('_helpersTemplate');
+  static String get loadingWidget => _read('_loadingWidgetTemplate');
+  static String get errorWidget => _read('_errorWidgetTemplate');
 }
 
 String _read(String fieldName) {

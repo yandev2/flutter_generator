@@ -12,6 +12,10 @@ abstract final class ProjectDependencies {
     'intl': '^0.20.2',
     'flutter_screenutil': '^5.9.3',
     'flutter_dotenv': '^6.0.1',
+    'connectivity_plus': '^6.1.4',
+    'riverpod_sqflite': '^0.4.3',
+    'sqflite': '^2.4.2',
+    'path': '^1.9.1',
   };
 
   static const devDependencies = <String, String>{

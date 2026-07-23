@@ -15,6 +15,11 @@ class InitBuilder {
       'lib/core/constants',
       'lib/core/errors',
       'lib/core/network',
+      'lib/core/storage',
+      'lib/core/services',
+      'lib/core/extensions',
+      'lib/core/utils',
+      'lib/core/widgets',
       'lib/core/theme',
       'lib/core/navigation',
       ...FeaturePaths.featureScaffoldDirs('splash'),
@@ -37,6 +42,8 @@ class InitBuilder {
 
     _createFile('lib/core/constants/env_config.dart', _envConfigTemplate);
     _createFile('lib/core/constants/app_constants.dart', _appConstantsTemplate);
+    _createFile('lib/core/constants/asset_paths.dart', _assetPathsTemplate);
+    _createFile('lib/core/services/.gitkeep', '');
     _createFile('lib/core/errors/failures.dart', _failureTemplate);
     _createFile('lib/core/errors/exceptions.dart', _exceptionTemplate);
     _createFile('lib/core/errors/exception_mapper.dart', _exceptionMapperTemplate);
@@ -53,6 +60,35 @@ class InitBuilder {
       'lib/core/network/api_client_provider.dart',
       _apiClientProviderTemplate,
     );
+    _createFile('lib/core/network/network_info.dart', _networkInfoTemplate);
+    _createFile(
+      'lib/core/network/network_info_provider.dart',
+      _networkInfoProviderTemplate,
+    );
+    _createFile(
+      'lib/core/storage/shared_preferences_storage.dart',
+      _sharedPreferencesStorageTemplate,
+    );
+    _createFile(
+      'lib/core/storage/riverpod_sqflite.dart',
+      _riverpodSqfliteTemplate,
+    );
+    _createFile(
+      'lib/core/extensions/context_extension.dart',
+      _contextExtensionTemplate,
+    );
+    _createFile(
+      'lib/core/extensions/string_extension.dart',
+      _stringExtensionTemplate,
+    );
+    _createFile(
+      'lib/core/extensions/color_extension.dart',
+      _colorExtensionTemplate,
+    );
+    _createFile('lib/core/utils/validators.dart', _validatorsTemplate);
+    _createFile('lib/core/utils/helpers.dart', _helpersTemplate);
+    _createFile('lib/core/widgets/loading_widget.dart', _loadingWidgetTemplate);
+    _createFile('lib/core/widgets/error_widget.dart', _errorWidgetTemplate);
     _createFile('lib/app/router/route_paths.dart', _routePathsTemplate);
     _createFile('lib/app/router/app_router.dart', _appRouterTemplate);
     _createFile('lib/core/theme/app_theme.dart', _themeTemplate);
@@ -330,6 +366,288 @@ abstract class AuthRepository {
   });
 
   Future<Either<Failure, bool>> logout();
+}
+''';
+
+  static const String _assetPathsTemplate = '''
+abstract class AssetPaths {
+  static const images = 'assets/images/';
+  static const icons = 'assets/icons/';
+  static const logo = 'assets/images/logo.png';
+}
+''';
+
+  static const String _sharedPreferencesStorageTemplate = '''
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../app/providers/shared_preferences_provider.dart';
+
+part 'shared_preferences_storage.g.dart';
+
+/// Typed wrapper untuk [SharedPreferences].
+class SharedPreferencesStorage {
+  SharedPreferencesStorage(this._prefs);
+
+  final SharedPreferences _prefs;
+
+  String? getString(String key) => _prefs.getString(key);
+  Future<bool> setString(String key, String value) =>
+      _prefs.setString(key, value);
+
+  bool? getBool(String key) => _prefs.getBool(key);
+  Future<bool> setBool(String key, bool value) => _prefs.setBool(key, value);
+
+  int? getInt(String key) => _prefs.getInt(key);
+  Future<bool> setInt(String key, int value) => _prefs.setInt(key, value);
+
+  Future<bool> remove(String key) => _prefs.remove(key);
+}
+
+@Riverpod(keepAlive: true)
+SharedPreferencesStorage sharedPreferencesStorage(Ref ref) {
+  return SharedPreferencesStorage(ref.watch(sharedPreferencesProvider));
+}
+''';
+
+  static const String _riverpodSqfliteTemplate = '''
+import 'package:flutter_riverpod/experimental/persist.dart';
+import 'package:path/path.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:riverpod_sqflite/riverpod_sqflite.dart';
+import 'package:sqflite/sqflite.dart';
+
+part 'riverpod_sqflite.g.dart';
+
+/// Shared SQLite storage untuk Riverpod offline persistence.
+///
+/// Contoh di Notifier:
+/// ```dart
+/// await persist(
+///   ref.watch(riverpodSqfliteStorageProvider.future),
+///   key: 'my_cache_key',
+///   options: const StorageOptions(cacheTime: StorageCacheTime.unsafe_forever),
+///   encode: jsonEncode,
+///   decode: (json) => ...,
+/// ).future;
+/// ```
+@Riverpod(keepAlive: true)
+Future<Storage<String, String>> riverpodSqfliteStorage(Ref ref) async {
+  return JsonSqFliteStorage.open(
+    join(await getDatabasesPath(), 'riverpod.db'),
+  );
+}
+''';
+
+  static const String _networkInfoTemplate = '''
+import 'package:connectivity_plus/connectivity_plus.dart';
+
+/// Abstraksi pengecekan koneksi internet.
+abstract class NetworkInfo {
+  Future<bool> get isConnected;
+}
+
+class NetworkInfoImpl implements NetworkInfo {
+  NetworkInfoImpl(this._connectivity);
+
+  final Connectivity _connectivity;
+
+  @override
+  Future<bool> get isConnected async {
+    final results = await _connectivity.checkConnectivity();
+    return results.any((result) => result != ConnectivityResult.none);
+  }
+}
+''';
+
+  static const String _networkInfoProviderTemplate = '''
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+import 'network_info.dart';
+
+part 'network_info_provider.g.dart';
+
+@Riverpod(keepAlive: true)
+NetworkInfo networkInfo(Ref ref) {
+  return NetworkInfoImpl(Connectivity());
+}
+''';
+
+  static const String _contextExtensionTemplate = '''
+import 'package:flutter/material.dart';
+
+extension BuildContextX on BuildContext {
+  ThemeData get theme => Theme.of(this);
+  ColorScheme get colorScheme => Theme.of(this).colorScheme;
+  TextTheme get textTheme => Theme.of(this).textTheme;
+  MediaQueryData get mediaQuery => MediaQuery.of(this);
+  Size get screenSize => mediaQuery.size;
+
+  void showSnackBar(String message, {Duration? duration}) {
+    ScaffoldMessenger.of(this).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: duration ?? const Duration(seconds: 3),
+      ),
+    );
+  }
+}
+''';
+
+  static const String _stringExtensionTemplate = '''
+extension StringX on String {
+  String capitalize() {
+    if (isEmpty) return this;
+    return '\${this[0].toUpperCase()}\${substring(1)}';
+  }
+
+  String capitalizeWords() {
+    if (isEmpty) return this;
+    return split(' ').map((word) => word.capitalize()).join(' ');
+  }
+
+  bool get isBlank => trim().isEmpty;
+}
+''';
+
+  static const String _colorExtensionTemplate = '''
+import 'package:flutter/material.dart';
+
+extension ColorX on Color {
+  Color withOpacityValue(double opacity) {
+    return withValues(alpha: opacity.clamp(0.0, 1.0));
+  }
+
+  Color lighten([double amount = 0.1]) {
+    final hsl = HSLColor.fromColor(this);
+    return hsl
+        .withLightness((hsl.lightness + amount).clamp(0.0, 1.0))
+        .toColor();
+  }
+
+  Color darken([double amount = 0.1]) {
+    final hsl = HSLColor.fromColor(this);
+    return hsl
+        .withLightness((hsl.lightness - amount).clamp(0.0, 1.0))
+        .toColor();
+  }
+}
+''';
+
+  static const String _validatorsTemplate = '''
+class Validators {
+  static final _emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+\$');
+
+  static String? email(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Email wajib diisi';
+    }
+    if (!_emailRegex.hasMatch(value.trim())) {
+      return 'Format email tidak valid';
+    }
+    return null;
+  }
+
+  static String? password(String? value, {int minLength = 8}) {
+    if (value == null || value.isEmpty) {
+      return 'Password wajib diisi';
+    }
+    if (value.length < minLength) {
+      return 'Password minimal \$minLength karakter';
+    }
+    return null;
+  }
+}
+''';
+
+  static const String _helpersTemplate = '''
+class Helpers {
+  static bool isNullOrEmpty(String? value) =>
+      value == null || value.trim().isEmpty;
+
+  static String formatFileSize(int bytes) {
+    if (bytes < 1024) return '\$bytes B';
+    if (bytes < 1024 * 1024) {
+      return '\${(bytes / 1024).toStringAsFixed(1)} KB';
+    }
+    if (bytes < 1024 * 1024 * 1024) {
+      return '\${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
+    return '\${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+  }
+}
+''';
+
+  static const String _loadingWidgetTemplate = '''
+import 'package:flutter/material.dart';
+
+class LoadingWidget extends StatelessWidget {
+  const LoadingWidget({super.key, this.message});
+
+  final String? message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(),
+          if (message != null) ...[
+            const SizedBox(height: 16),
+            Text(message!),
+          ],
+        ],
+      ),
+    );
+  }
+}
+''';
+
+  static const String _errorWidgetTemplate = '''
+import 'package:flutter/material.dart';
+
+/// Hindari bentrok dengan [ErrorWidget] bawaan Flutter.
+class AppErrorWidget extends StatelessWidget {
+  const AppErrorWidget({
+    super.key,
+    required this.message,
+    this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            Text(message, textAlign: TextAlign.center),
+            if (onRetry != null) ...[
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: onRetry,
+                child: const Text('Coba lagi'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
 }
 ''';
 

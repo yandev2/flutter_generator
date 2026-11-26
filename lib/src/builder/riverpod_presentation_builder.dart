@@ -47,7 +47,7 @@ class $notifierName extends _\$$notifierName {
     final providerName = '${pageCamel}Provider';
     final providerFileName = '${pageName.toSnakeCase()}_provider.dart';
 
-    return '''import 'package:flutter/material.dart';
+    return '''import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/$providerFileName';

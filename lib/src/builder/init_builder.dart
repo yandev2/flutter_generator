@@ -189,7 +189,7 @@ include: package:flutter_lints/flutter.yaml
 # Requires dev_dependencies: flutter_lints, riverpod_lint
 # Docs: https://riverpod.dev/docs/introduction/getting_started
 plugins:
-  riverpod_lint: ^3.1.4
+  riverpod_lint: ^3.2.0
 ''';
 
   static const String _failureTemplate = '''
@@ -475,7 +475,7 @@ NetworkInfo networkInfo(Ref ref) {
 ''';
 
   static const String _contextExtensionTemplate = '''
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 extension BuildContextX on BuildContext {
   ThemeData get theme => Theme.of(this);
@@ -512,7 +512,7 @@ extension StringX on String {
 ''';
 
   static const String _colorExtensionTemplate = '''
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 extension ColorX on Color {
   Color withOpacityValue(double opacity) {
@@ -537,7 +537,7 @@ extension ColorX on Color {
 
   static const String _validatorsTemplate = '''
 class Validators {
-  static final _emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+\$');
+  static final _emailRegex = RegExp(r'^[^@]+@[^@]+\\.[^@]+\$');
 
   static String? email(String? value) {
     if (value == null || value.trim().isEmpty) {
@@ -580,7 +580,7 @@ class Helpers {
 ''';
 
   static const String _loadingWidgetTemplate = '''
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class LoadingWidget extends StatelessWidget {
   const LoadingWidget({super.key, this.message});
@@ -606,7 +606,7 @@ class LoadingWidget extends StatelessWidget {
 ''';
 
   static const String _errorWidgetTemplate = '''
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Hindari bentrok dengan [ErrorWidget] bawaan Flutter.
 class AppErrorWidget extends StatelessWidget {
@@ -1047,7 +1047,7 @@ SharedPreferences sharedPreferences(Ref ref) {
 ''';
 
   static const String _appRouterTemplate = '''
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -1061,7 +1061,7 @@ part 'app_router.g.dart';
 
 class _AuthRefreshNotifier extends ChangeNotifier {
   _AuthRefreshNotifier(this.ref) {
-    ref.listen(authProvider, (_, __) => notifyListeners());
+    ref.listen(authProvider, (_, _) => notifyListeners());
   }
 
   final Ref ref;
@@ -1120,14 +1120,14 @@ abstract class RoutePaths {
 ''';
 
   static const String _themeTemplate = '''
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 final ThemeData lightTheme = ThemeData(
   brightness: Brightness.light,
   primaryColor: Colors.blue,
   scaffoldBackgroundColor: Colors.white,
   appBarTheme: const AppBarTheme(
-    color: Colors.blue,
+    backgroundColor: Colors.blue,
     elevation: 0,
     iconTheme: IconThemeData(color: Colors.white),
   ),
@@ -1139,7 +1139,7 @@ final ThemeData darkTheme = ThemeData(
   primaryColor: Colors.blueGrey,
   scaffoldBackgroundColor: Colors.grey[900],
   appBarTheme: AppBarTheme(
-    color: Colors.grey[850],
+    backgroundColor: Colors.grey[850],
     elevation: 0,
     iconTheme: const IconThemeData(color: Colors.white),
   ),
@@ -1148,7 +1148,7 @@ final ThemeData darkTheme = ThemeData(
 ''';
 
   static const String _themeProviderTemplate = '''
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'theme_provider.g.dart';
@@ -1169,7 +1169,7 @@ class AppThemeMode extends _\$AppThemeMode {
 ''';
 
   static const String _mainTemplate = '''
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'app/bootstrap.dart';
 
@@ -1180,7 +1180,7 @@ Future<void> main() async {
 ''';
 
   static const String _bootstrapTemplate = '''
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -1206,7 +1206,7 @@ Future<void> bootstrap() async {
 ''';
 
   static const String _appTemplate = '''
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -1256,7 +1256,7 @@ Future<void> splashInit(Ref ref) async {
 ''';
 
   static const String _splashPageTemplate = '''
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -1293,7 +1293,7 @@ class SplashPage extends ConsumerWidget {
 ''';
 
   static const String _loginPageTemplate = '''
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -1371,7 +1371,7 @@ class Dashboard extends _\$Dashboard {
 ''';
 
   static const String _dashboardPageTemplate = '''
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/dashboard_provider.dart';

@@ -85,23 +85,13 @@ class Generator {
       print(
           '🎉 Generate Success! Menjalankan build_runner secara otomatis...');
 
-      final isFlutter = _isFlutterProject();
       final result = Process.runSync(
-        isFlutter ? 'flutter' : 'dart',
-        isFlutter
-            ? [
-                'pub',
-                'run',
-                'build_runner',
-                'build',
-                '-d',
-              ]
-            : [
-                'run',
-                'build_runner',
-                'build',
-                '-d',
-              ],
+        'dart',
+        const [
+          'run',
+          'build_runner',
+          'build',
+        ],
         runInShell: true,
         workingDirectory: currentDir,
       );
@@ -126,15 +116,5 @@ class Generator {
       return false;
     }
     return pubspec.readAsStringSync().contains('build_runner');
-  }
-
-  static bool _isFlutterProject() {
-    final pubspec = File('${Directory.current.path}/pubspec.yaml');
-    if (!pubspec.existsSync()) {
-      return false;
-    }
-    final content = pubspec.readAsStringSync();
-    return content.contains('flutter:') &&
-        (content.contains('sdk: flutter') || content.contains('sdk:flutter'));
   }
 }

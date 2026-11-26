@@ -335,7 +335,7 @@ void main() {
 
       expect(code, contains('include: package:flutter_lints/flutter.yaml'));
       expect(code, contains('plugins:'));
-      expect(code, contains('riverpod_lint: ^3.1.4'));
+      expect(code, contains('riverpod_lint: ^3.2.0'));
       expect(code, isNot(contains('custom_lint')));
       expect(code, isNot(contains('analyzer:')));
     });

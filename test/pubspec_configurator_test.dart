@@ -64,7 +64,10 @@ dependencies:
         contains("flutter: '${ProjectDependencies.defaultFlutterConstraint}'"),
       );
       expect(content, contains("dio: '^5.0.0'"));
-      expect(content, isNot(contains("dio: '^5.10.0'")));
+      expect(
+        content,
+        isNot(contains("dio: '${ProjectDependencies.dependencies['dio']}'")),
+      );
     });
 
     test('appends assets without removing existing ones', () {

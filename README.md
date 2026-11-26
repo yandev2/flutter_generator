@@ -1,7 +1,7 @@
 # 🚀 Flutter Generator Pro
 
-[![Dart](https://img.shields.io/badge/Dart-3.10+-blue.svg)](https://dart.dev)
-[![Flutter](https://img.shields.io/badge/Flutter-Compatible-02569B.svg)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.14+-blue.svg)](https://dart.dev)
+[![Flutter](https://img.shields.io/badge/Flutter-3.50+-02569B.svg)](https://flutter.dev)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **Flutter Generator Pro** adalah *Custom CLI Package* untuk mempercepat development Flutter dengan **Clean Architecture feature-first**, **Riverpod 3.x**, dan **go_router**.
@@ -86,7 +86,7 @@ Contoh fitur `auth`:
 3. [manual]     → tulis abstract AuthRepository
 4. gen_data     → datasource, repository impl, usecase, provider wiring (otomatis)
 5. gen_page     → state, page provider, LoginPage, optional route inject
-6. build_runner → dart run build_runner build -d
+6. build_runner → dart run build_runner build
 ```
 
 Provider chain setelah `gen_data`:
@@ -282,7 +282,7 @@ analysis_options.yaml                  → plugin riverpod_lint
 .gitignore                             → ditambahkan entry `.env` jika belum ada
 ```
 
-**Dependency tambahan di `pubspec.yaml`:** `flutter_dotenv`, `connectivity_plus`, `riverpod_sqflite`, `sqflite`, `path` + asset `.env`.
+**Dependency tambahan di `pubspec.yaml`:** `material_ui`, `flutter_dotenv`, `connectivity_plus`, `riverpod_sqflite`, `sqflite`, `path` + asset `.env`.
 
 **Variabel `.env` default:**
 
@@ -467,7 +467,7 @@ dart run flutter_generator:gen_page
 ### Contoh generated page
 
 ```dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/login_provider.dart';
 
@@ -527,7 +527,7 @@ flutter_generator/
 ## ⚠️ Catatan Penting
 
 1. Jalankan generator di **root project Flutter target**, bukan di folder package ini.
-2. Setelah generate provider/state: `dart run build_runner build -d`
+2. Setelah generate provider/state: `dart run build_runner build`
 3. `gen_init` merge dependency ke `pubspec.yaml` target → jalankan `flutter pub get`
 4. Domain repository wajib pakai `Either<Failure, T>` dari **`dartz`**
 5. Penamaan usecase: **`LoginUsecase`** (suffix `Usecase`, satu kata)

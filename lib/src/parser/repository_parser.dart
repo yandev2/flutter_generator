@@ -185,7 +185,7 @@ class RepositoryParser {
 
     final parsed = <ParsedParameter>[];
     for (final param in parameterList.parameters) {
-      final name = _formalParameterName(param);
+      final name = param.name?.lexeme;
       if (name == null) {
         continue;
       }
@@ -193,7 +193,7 @@ class RepositoryParser {
       final typeAnnotation = _parameterType(param);
       final type = typeAnnotation?.toSource() ?? 'dynamic';
       final isNamed = param.isNamed;
-      final hasDefault = param is DefaultFormalParameter;
+      final hasDefault = param.defaultClause != null;
 
       parsed.add(
         ParsedParameter(
@@ -214,7 +214,7 @@ class RepositoryParser {
 
     final args = <String>[];
     for (final param in parameterList.parameters) {
-      final name = _formalParameterName(param);
+      final name = param.name?.lexeme;
       if (name == null) {
         continue;
       }
@@ -229,31 +229,8 @@ class RepositoryParser {
     return args.join(', ');
   }
 
-  static String? _formalParameterName(FormalParameter param) {
-    if (param is DefaultFormalParameter) {
-      return param.parameter.name?.lexeme;
-    }
-    return param.name?.lexeme;
-  }
-
   static TypeAnnotation? _parameterType(FormalParameter param) {
-    if (param is DefaultFormalParameter) {
-      return _parameterTypeFromNormal(param.parameter);
-    }
-    return _parameterTypeFromNormal(param);
-  }
-
-  static TypeAnnotation? _parameterTypeFromNormal(FormalParameter param) {
-    if (param is SimpleFormalParameter) {
-      return param.type;
-    }
-    if (param is FieldFormalParameter) {
-      return param.type;
-    }
-    if (param is SuperFormalParameter) {
-      return param.type;
-    }
-    return null;
+    return param.functionTypedSuffix == null ? param.type : null;
   }
 
   static void _collectFromTypeAnnotation(

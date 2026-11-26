@@ -111,7 +111,6 @@ abstract class ZakatRepository {
       File(zakatRepoPath).writeAsStringSync(repoSource);
 
       final parsed = RepositoryParser().parse(zakatRepoPath, 'ZakatRepository');
-      final method = parsed.methods.single;
       final implPath =
           '${tempDir.path}/lib/features/zakat/data/repositories/zakat_repository_impl.dart';
 
